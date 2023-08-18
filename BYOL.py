@@ -4,7 +4,7 @@ Created on Thu Aug 18 2023
 @contact: kichan.lee@yonsei.ac.kr
 """
 __all__ = [
-    'SupervisedTrainer',
+    'BYOL',
     ]
 
 import os
@@ -114,8 +114,8 @@ class BYOL:
                 self.optimizer.step()
                 self.target_update()
                 losses.append(loss.item())
-            self.train_loss.append(np.mean(losses))
-            self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)
+        self.train_loss.append(np.mean(losses))
+        self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)
     
     @torch.no_grad()
     def test(self):
