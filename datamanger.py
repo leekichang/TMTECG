@@ -19,7 +19,7 @@ class TMT(Dataset):
         is_train = 'train' if is_train else 'test'
         if stage != 'all':
             self.data   = np.load(f'{path}/STAGE{stage}_X_{is_train}.npy').transpose(0,2,1)
-            self.data   = torch.FloatTensor(self.data)
+            self.data   = torch.FloatTensor(self.data*0.1)
             self.labels = torch.LongTensor(np.load(f'{path}/STAGE{stage}_Y_{is_train}.npy'))
         else:
             self.data, self.labels = [], []
@@ -28,7 +28,7 @@ class TMT(Dataset):
                 chunk_Y = np.load(f'{path}/STAGE{i+1}_Y_{is_train}.npy')
                 self.data.append(chunk_X)
                 self.labels.append(chunk_Y)
-            self.data = torch.FloatTensor(np.concatenate(self.data, axis=0))
+            self.data = torch.FloatTensor(np.concatenate(self.data, axis=0)*0.1)
             self.labels = torch.LongTensor(np.concatenate(self.labels, axis=0))
             print(self.data.shape, self.labels.shape)
             
@@ -45,7 +45,7 @@ class TMT_Full(Dataset):
         self.npz       = np.load(f'{path}/BATCH{idx}.npz')
         self.data      = self.npz['data'].transpose(0,2,1)
         print(f"{len(self.npz['count'])} Patients!, Total {sum(self.npz['count'])} Sample in Shape {self.data.shape}")
-        self.data      = torch.FloatTensor(self.data)
+        self.data      = torch.FloatTensor(self.data*0.1)
         
     def __len__(self):
         return len(self.data)
