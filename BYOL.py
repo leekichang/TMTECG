@@ -88,7 +88,7 @@ class BYOL:
         self.target_model.eval()
         self.online_model.train()
         losses = []
-        chunk_idxs = [idx for idx in range(len(self.data_chunks))]
+        chunk_idxs = [idx+1 for idx in range(len(self.data_chunks))]
         random.shuffle(chunk_idxs)
         for chunk_idx in tqdm(chunk_idxs):
             self.args.stage = chunk_idx
