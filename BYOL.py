@@ -4,7 +4,7 @@ Created on Thu Aug 18 2023
 @contact: kichan.lee@yonsei.ac.kr
 """
 __all__ = [
-    'SupervisedTrainer',
+    'BYOL',
     ]
 
 import os
