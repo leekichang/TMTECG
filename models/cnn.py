@@ -38,12 +38,6 @@ class ConvBlock(nn.Module):
         x = self.convs(x)
         return x
 
-class DummyLayer(nn.Module):
-    def __init__(self, groups):
-        self.groups = groups
-        pass
-    def forward(self, x):
-        return x.reshape(x.size(0), self.groups, -1)
 
 class CNN(nn.Module):
     def __init__(self, model_type='Bg', num_class=2):
@@ -60,10 +54,11 @@ class CNN(nn.Module):
         self.drop_outs   = nn.ModuleList([nn.Dropout(0.1) for _ in range(3)])
         
         self.head        = nn.Linear(in_features=self.config['linear'][0], out_features=self.config['linear'][1])
+        
         if num_class != 0:
             self.classifier  = nn.Linear(in_features=self.config['linear'][1]*self.config['groups'], out_features=num_class)
         else:
-            self.classifier  = DummyLayer(self.config['groups'])
+            self.classifier  = nn.Identity()
             
     
     def forward(self, x):

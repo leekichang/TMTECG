@@ -3,11 +3,13 @@ Created on Thu Aug 17 2023
 @author: Kichang Lee
 @contact: kichan.lee@yonsei.ac.kr
 """
+__all__ = [
+    'SupervisedTrainer',
+    ]
 
 import os
 import torch
 import numpy as np
-from tqdm import tqdm
 from datetime import datetime
 from torch.utils.data import DataLoader
 from sklearn.metrics import recall_score, f1_score
@@ -16,7 +18,7 @@ import utils
 
 import torch.utils.tensorboard as tb
 
-class SupervisedTrainer(object):
+class SupervisedTrainer:
     def __init__(self, args):
         self.args         = args
         self.save_path    = f'./checkpoints/{args.exp_name}'
@@ -98,7 +100,9 @@ class SupervisedTrainer(object):
     def print_train_info(self):
         print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss[self.epoch]:>6.4f} Test Loss:{self.test_loss[self.epoch]:>6.4f} Test Accuracy:{self.accs[self.epoch]:>5.2f}%', flush=True)
         print(f'({self.epoch+1:03}/{self.epochs}) recall:{self.recalls[self.epoch]:>6.2f} f1:{self.f1s[self.epoch]:>6.4f} specification:{self.specs[self.epoch]:>5.2f}%', flush=True)
+
 if __name__ == '__main__':
+    from tqdm import tqdm
     args = utils.parse_args()
     torch.manual_seed(args.seed)
     trainer = SupervisedTrainer(args)

@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     print(f"*** {len(files)} PATIENTS ***\n\n")
 
-    num_batch   = 32
+    num_batch   = 2907
     batch_size  = int(len(files)//num_batch)
     batch_idx   = [i*batch_size for i in range(num_batch)]
     batch_idx.append(len(files))
@@ -69,6 +69,6 @@ if __name__ == '__main__':
         print("Final X shape:", X.shape)
         print("Final Count shape:", counts.shape)
         start_t = time.time()
-        np.savez_compressed(f'{SAVEPATH}/BATCH{idx+1}.npz', data=X, count=counts)
+        np.savez_compressed(f'{SAVEPATH}/BATCHtest.npz', data=X, count=counts)
         end_t = time.time()
         print(f'BATCH {idx+1} Saved! Took {end_t-start_t:.2f} sec!')
