@@ -90,7 +90,7 @@ class BYOL:
         self.target_model.eval()
         self.online_model.train()
         losses = []
-        for X, _ in self.dataloader: # TODO: unlabeled에 맞게 수정
+        for X,_ in self.dataloader: # TODO: unlabeled에 맞게 수정
             self.optimizer.zero_grad()
             X = X.to(self.device)
             X1, X2 = self.augmentator(X), self.augmentator(X)

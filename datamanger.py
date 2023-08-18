@@ -18,7 +18,7 @@ class TMT(Dataset):
     def __init__(self, stage, is_train, path='./dataset/TMT_labeled'):
         is_train = 'train' if is_train else 'test'
         self.data      = np.load(f'{path}/STAGE{stage}_X_{is_train}.npy').transpose(0,2,1)
-        self.data      = minmax_scaling(self.data)
+        # self.data      = minmax_scaling(self.data)
         self.data      = torch.FloatTensor(self.data)
         
         self.labels    = torch.LongTensor(np.load(f'{path}/STAGE{stage}_Y_{is_train}.npy'))
@@ -36,6 +36,21 @@ class TMT(Dataset):
         if self.transform:
             data_item = self.transform(data_item)
         return data_item, label_item
+
+class TMT_Full(Dataset):
+    def __init__(self, idx, is_train=None, path='./dataset/TMT_unlabeled'):
+        self.npz       = np.load(f'{path}/BATCH{idx}.npz')
+        self.data      = self.npz['data'].transpose(0,2,1)
+        print(f"{len(self.npz['count'])} Patients!, Total {sum(self.npz['count'])} Sample in Shape {self.data.shape}")
+        self.data      = torch.FloatTensor(self.data)
+        print()
+        
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        data_item  = self.data[idx,:]
+        return data_item, None
 
 if __name__ == '__main__':
     from tqdm import tqdm

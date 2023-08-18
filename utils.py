@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 import models
+import trainers
 import datamanger
 import config as cfg
 
@@ -17,7 +18,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', help='experiement name', type=str, default='CNN_B_CMSC')
     parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg'])
-    parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT'])
+    parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT', 'TMT_Full'])
+    parser.add_argument('--phase', help='Dataset', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
     parser.add_argument('--stage', help='Stage of TMT', type=str, default='1', choices=[f'{i+1}' for i in range(4)])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
     parser.add_argument('--optimizer', help='Optimizer', type=str, default='AdamW')
@@ -26,6 +28,9 @@ def parse_args():
     parser.add_argument('--batch_size', help='Batch size', type=int, default=128)
     parser.add_argument('--epochs', help='Epochs', type=int, default=100)
     parser.add_argument('--seed', help='random seed', type=int, default=0)
+    
+    parser.add_argument('--t', help='temperature for BYOL', type=float, default=0.5)
+    parser.add_argument('--ma_decay', help='Moving average decay', type=float, default=0.9)
     
     args = parser.parse_args()
     return args
@@ -44,12 +49,15 @@ def build_criterion(args):
 def build_optimizer(model, args):
     return getattr(optim, args.optimizer)(model.parameters(), lr=args.lr, weight_decay=args.decay)
 
+def build_trainer(args):
+    trainer_type = cfg.TRAINER[args.phase]
+    return getattr(trainers, trainer_type)(args)
+
 def calculate_topk_accuracy(predictions, targets, k):
     _, topk_preds = predictions.topk(k, dim=1)
     correct = topk_preds.eq(targets.view(-1, 1).expand_as(topk_preds))
     topk_acc = correct.any(dim=1).float().mean().item() * 100
     return topk_acc
-
 
 def specificity_score(y_pred, y_true):
     true_negative = np.sum(np.logical_and(y_pred == 0, y_true == 0))
@@ -57,3 +65,7 @@ def specificity_score(y_pred, y_true):
     
     specificity = true_negative / (actual_negative + 1e-7)
     return specificity
+
+def set_requires_grad(model, val):
+    for p in model.parameters():
+        p.requires_grad = val
