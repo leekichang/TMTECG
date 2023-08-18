@@ -8,6 +8,7 @@ __pycache__/
 
 reference/
 dataset/
+checkpoints/
 tensorboard/
 use_this_data/
 
