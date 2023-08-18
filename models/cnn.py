@@ -37,7 +37,13 @@ class ConvBlock(nn.Module):
     def forward(self, x):
         x = self.convs(x)
         return x
-
+def MLP(dim, hidden_size=512):
+    return nn.Sequential(
+        nn.Linear(dim, hidden_size),
+        nn.BatchNorm1d(hidden_size),
+        nn.ReLU(inplace=True),
+        nn.Linear(hidden_size, dim)
+    )
 
 class CNN(nn.Module):
     def __init__(self, model_type='Bg', num_class=2):
@@ -54,12 +60,11 @@ class CNN(nn.Module):
         self.drop_outs   = nn.ModuleList([nn.Dropout(0.1) for _ in range(3)])
         
         self.head        = nn.Linear(in_features=self.config['linear'][0], out_features=self.config['linear'][1])
-        
+        self.predictor   = MLP(dim=self.config['linear'][1], hidden_size=512)
         if num_class != 0:
             self.classifier  = nn.Linear(in_features=self.config['linear'][1]*self.config['groups'], out_features=num_class)
         else:
             self.classifier  = nn.Identity()
-            
     
     def forward(self, x):
         for idx in range(len(self.convBlocks)):

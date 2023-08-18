@@ -94,13 +94,13 @@ class BYOL:
             self.args.stage = chunk_idx
             self.dataset    = utils.load_dataset(args, is_train=True)
             self.dataloader = DataLoader(self.dataset, batch_size=self.args.batch_size, shuffle=True, drop_last=True)
-            for X in self.dataloader: # TODO: unlabeled에 맞게 수정
+            for X in self.dataloader:
                 self.optimizer.zero_grad()
                 X = X.to(self.device)
                 X1, X2 = self.augmentator(X), self.augmentator(X)
                 del X
-                z_i_1 = self.online_model(X1)
-                z_i_2 = self.online_model(X2)
+                z_i_1 = self.online_model.predictor(self.online_model(X1))
+                z_i_2 = self.online_model.predictor(self.online_model(X2))
                 
                 with torch.no_grad():
                     z_j_1 = self.target_model(X2)
