@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg'])
     parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT', 'TMT_Full'])
     parser.add_argument('--phase', help='Dataset', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
-    parser.add_argument('--stage', help='Stage of TMT', type=str, default='1', choices=[f'{i+1}' for i in range(4)])
+    parser.add_argument('--stage', help='Stage of TMT', type=str, default='1', choices=['1', '2', '3', '4', 'all'])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
     parser.add_argument('--optimizer', help='Optimizer', type=str, default='AdamW')
     parser.add_argument('--lr', help='Learning rate', type=float, default=0.001)

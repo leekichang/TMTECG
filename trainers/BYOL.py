@@ -16,7 +16,7 @@ from functools import wraps
 from datetime import datetime
 from torch.utils.data import DataLoader
 from sklearn.metrics import recall_score, f1_score
-
+from tqdm import tqdm
 import ops
 import utils
 
@@ -70,11 +70,6 @@ class BYOL:
         self.augmentator = ops.Augmentator()
     
         self.train_loss = []
-        # self.test_loss  = []
-        # self.accs       = []
-        # self.recalls    = []
-        # self.f1s        = []
-        # self.specs      = []
         
         self.TB_WRITER = tb.SummaryWriter(f'./tensorboard/{str(datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))}_{self.args.exp_name}')
         
@@ -90,7 +85,7 @@ class BYOL:
         self.target_model.eval()
         self.online_model.train()
         losses = []
-        for X,_ in self.dataloader: # TODO: unlabeled에 맞게 수정
+        for X in self.dataloader: # TODO: unlabeled에 맞게 수정
             self.optimizer.zero_grad()
             X = X.to(self.device)
             X1, X2 = self.augmentator(X), self.augmentator(X)

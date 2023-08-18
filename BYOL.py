@@ -10,13 +10,14 @@ __all__ = [
 import os
 import copy
 import torch
+import random
 import numpy as np
 import torch.nn as nn
 from functools import wraps
 from datetime import datetime
 from torch.utils.data import DataLoader
 from sklearn.metrics import recall_score, f1_score
-
+from tqdm import tqdm
 import ops
 import utils
 
@@ -65,16 +66,13 @@ class BYOL:
         self.criterion    = BYOLLoss(args.t).to(self.device)
         self.optimizer    = utils.build_optimizer(self.online_model, args)
         
-        self.dataset      = utils.load_dataset(args, is_train=True)
-        self.dataloader   = DataLoader(self.dataset, batch_size=args.batch_size, shuffle=True , drop_last=True )
-        self.augmentator = ops.Augmentator()
-    
+        self.dataset      = None # utils.load_dataset(args, is_train=True)
+        self.dataloader   = None # DataLoader(self.dataset, batch_size=args.batch_size, shuffle=True , drop_last=True )
+        self.augmentator  = ops.Augmentator()
+        
+        self.data_chunks  = [file for file in os.listdir(f'./dataset/TMT_unlabeled') if file.endswith('.npz')]
+
         self.train_loss = []
-        # self.test_loss  = []
-        # self.accs       = []
-        # self.recalls    = []
-        # self.f1s        = []
-        # self.specs      = []
         
         self.TB_WRITER = tb.SummaryWriter(f'./tensorboard/{str(datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))}_{self.args.exp_name}')
         
@@ -90,28 +88,34 @@ class BYOL:
         self.target_model.eval()
         self.online_model.train()
         losses = []
-        for X, _ in self.dataloader: # TODO: unlabeled에 맞게 수정
-            self.optimizer.zero_grad()
-            X = X.to(self.device)
-            X1, X2 = self.augmentator(X), self.augmentator(X)
-            del X
-            z_i_1 = self.online_model(X1)
-            z_i_2 = self.online_model(X2)
-            
-            with torch.no_grad():
-                z_j_1 = self.target_model(X2)
-                z_j_2 = self.target_model(X1)
+        chunk_idxs = [idx for idx in range(len(self.data_chunks))]
+        random.shuffle(chunk_idxs)
+        for chunk_idx in tqdm(chunk_idxs):
+            self.args.stage = chunk_idx
+            self.dataset    = utils.load_dataset(args, is_train=True)
+            self.dataloader = DataLoader(self.dataset, batch_size=self.args.batch_size, shuffle=True, drop_last=True)
+            for X in self.dataloader: # TODO: unlabeled에 맞게 수정
+                self.optimizer.zero_grad()
+                X = X.to(self.device)
+                X1, X2 = self.augmentator(X), self.augmentator(X)
+                del X
+                z_i_1 = self.online_model(X1)
+                z_i_2 = self.online_model(X2)
                 
-            loss1 = self.criterion(z_i_1, z_j_1)
-            loss2 = self.criterion(z_i_2, z_j_2)
-            loss = loss1+loss2
-            
-            loss.backward()
-            self.optimizer.step()
-            self.target_update()
-            losses.append(loss.item())
-        self.train_loss.append(np.mean(losses))
-        self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)
+                with torch.no_grad():
+                    z_j_1 = self.target_model(X2)
+                    z_j_2 = self.target_model(X1)
+                    
+                loss1 = self.criterion(z_i_1, z_j_1)
+                loss2 = self.criterion(z_i_2, z_j_2)
+                loss = loss1+loss2
+                
+                loss.backward()
+                self.optimizer.step()
+                self.target_update()
+                losses.append(loss.item())
+            self.train_loss.append(np.mean(losses))
+            self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)
     
     @torch.no_grad()
     def test(self):
@@ -161,6 +165,5 @@ if __name__ == '__main__':
         trainer.train()
         trainer.test()
         trainer.print_train_info()
-        if (trainer.epoch+1)%10 == 0:
-            trainer.save_model()
+        trainer.save_model()
         trainer.epoch += 1
