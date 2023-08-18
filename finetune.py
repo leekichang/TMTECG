@@ -16,13 +16,12 @@ if __name__ == '__main__':
     args = utils.parse_args()
     torch.manual_seed(args.seed)
     trainer = utils.build_trainer(args)
-    checkpoint = torch.load('./checkpoints/BYOL_2048/10.pth')
-
+    checkpoint = torch.load(f'./checkpoints/BYOL_{args.test_batch}/{args.ckpt_epoch}.pth')
+    
     load_backbone(checkpoint, trainer)
-    for param_name, param in trainer.model.named_parameters():
-        if 'classifier' not in param_name:
-            param.requires_grad = False
-            
+    # for param_name, param in trainer.model.named_parameters():
+    #     if 'classifier' not in param_name:
+    #         param.requires_grad = False
             
     for epoch in tqdm(range(trainer.epochs)):
         trainer.train()

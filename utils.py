@@ -32,6 +32,9 @@ def parse_args():
     parser.add_argument('--t', help='temperature for BYOL', type=float, default=0.5)
     parser.add_argument('--ma_decay', help='Moving average decay', type=float, default=0.9)
     
+    parser.add_argument('--test_batch', type=int, default=2048)
+    parser.add_argument('--ckpt_epoch', type=int, default=3)
+    
     args = parser.parse_args()
     return args
 
