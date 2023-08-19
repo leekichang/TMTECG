@@ -10,13 +10,10 @@ if __name__ == '__main__':
     args  = utils.parse_args()
     stage = f'STAGE{args.stage}'
     model = utils.build_model(args).to('cuda')
-    state_dict = torch.load('./checkpoints/BYOL_2048/100.pth')
-    model.load_state_dict(torch.load('./checkpoints/BYOL_2048/100.pth'))
-    
+    model.load_state_dict(torch.load(f'./checkpoints/BYOL_{args.test_batch}_{args.ckpt_epoch}_1e-4_{args.stage}/100.pth'))
+    #model.load_state_dict(torch.load(f'./checkpoints/baseline_{args.stage}/100.pth'))
     args.dataset = 'TMT'
-    
-    model.classifier = nn.Linear(in_features=model.config['linear'][1]*model.config['groups'], out_features=2).to('cuda')
-    
+      
     dataset = utils.load_dataset(args, is_train=False)
     dataloader = DataLoader(dataset, batch_size=1024, shuffle = False, drop_last=False)
     

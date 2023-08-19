@@ -44,7 +44,9 @@ if __name__ == '__main__':
     labels = [int(label) for label in database['CAD'].to_list()]
     train_files, val_files, train_labels, val_labels = train_test_split(fnames, labels, test_size=0.2, random_state=42)
     
-    desired_stages = [f'STAGE {i+1}' for i in range(4)]
+    #desired_stages = [f'STAGE {i+1}' for i in range(4)]
+    
+    desired_stages = ['STAGE#1', 'STAGE#2', 'STAGE#3', 'STAGEresting']
     
     train_file_dict  = defaultdict(list)
     train_label_dict = defaultdict(list)
@@ -65,6 +67,19 @@ if __name__ == '__main__':
                 if stage in desired_stages:
                     train_file_dict[stage].append(f'{f}_s_i{stripIndex}.csv')
                     train_label_dict[stage].append(train_labels[idx])
+                if isinstance(stage, str) and '#1' in stage:
+                    train_file_dict['STAGE#1'].append(f'{f}_s_i{stripIndex}.csv')
+                    train_label_dict['STAGE#1'].append(train_labels[idx])
+                if isinstance(stage, str) and '#2' in stage:
+                    train_file_dict['STAGE#2'].append(f'{f}_s_i{stripIndex}.csv')
+                    train_label_dict['STAGE#2'].append(train_labels[idx])
+                if isinstance(stage, str) and '#3' in stage:
+                    train_file_dict['STAGE#3'].append(f'{f}_s_i{stripIndex}.csv')
+                    train_label_dict['STAGE#3'].append(train_labels[idx])
+                if isinstance(stage, str) and '#' in stage:
+                    train_file_dict['STAGEresting'].append(f'{f}_s_i{stripIndex}.csv')
+                    train_label_dict['STAGEresting'].append(train_labels[idx])
+                
     
     test_file_dict  = defaultdict(list)
     test_label_dict = defaultdict(list)
@@ -85,7 +100,19 @@ if __name__ == '__main__':
                 if stage in desired_stages:
                     test_file_dict[stage].append(f'{f}_s_i{stripIndex}.csv')
                     test_label_dict[stage].append(val_labels[idx])
-    
+                elif isinstance(stage, str) and '#1' in stage:
+                    test_file_dict['STAGE#1'].append(f'{f}_s_i{stripIndex}.csv')
+                    test_label_dict['STAGE#1'].append(val_labels[idx])
+                elif isinstance(stage, str) and '#2' in stage:
+                    test_file_dict['STAGE#2'].append(f'{f}_s_i{stripIndex}.csv')
+                    test_label_dict['STAGE#2'].append(val_labels[idx])
+                elif isinstance(stage, str) and '#3' in stage:
+                    test_file_dict['STAGE#3'].append(f'{f}_s_i{stripIndex}.csv')
+                    test_label_dict['STAGE#3'].append(val_labels[idx])
+                if isinstance(stage, str) and '#' in stage:
+                    test_file_dict['STAGEresting'].append(f'{f}_s_i{stripIndex}.csv')
+                    test_label_dict['STAGEresting'].append(val_labels[idx])
+                    
     num_processes = multiprocessing.cpu_count()
     
     for stage in desired_stages:
