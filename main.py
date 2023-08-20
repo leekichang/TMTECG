@@ -15,6 +15,6 @@ if __name__ == '__main__':
         trainer.train()
         trainer.test()
         trainer.print_train_info()
-        if (trainer.epoch+1)%10 == 0:
+        if (trainer.epoch+1)%args.ckpt_freq == 0:
             trainer.save_model()
         trainer.epoch += 1
