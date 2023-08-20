@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--exp_name', help='experiement name', type=str, default='CNN_B_CMSC')
     parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg'])
     parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT', 'TMT_Full'])
-    parser.add_argument('--phase', help='Dataset', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
+    parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
     parser.add_argument('--stage', help='Stage of TMT', type=str, default='1', choices=['SITTING', '1', '2', '3', '4', 'all', '#1', '#2', '#3', 'resting'])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
     parser.add_argument('--optimizer', help='Optimizer', type=str, default='AdamW')
@@ -27,6 +27,7 @@ def parse_args():
     parser.add_argument('--decay', help='Weight decay', type=float, default=0.01)
     parser.add_argument('--batch_size', help='Batch size', type=int, default=128)
     parser.add_argument('--epochs', help='Epochs', type=int, default=100)
+    parser.add_argument('--ckpt_freq', type=int, default=1)
     parser.add_argument('--seed', help='random seed', type=int, default=0)
     
     parser.add_argument('--t', help='temperature for SimCLR', type=float, default=0.5)
@@ -35,7 +36,7 @@ def parse_args():
     parser.add_argument('--datapath', type=str, default='./dataset')
     parser.add_argument('--test_batch', type=int, default=2048)
     parser.add_argument('--ckpt_epoch', type=int, default=3)
-    
+
     args = parser.parse_args()
     return args
 
