@@ -51,6 +51,8 @@ def gaussian_noise(
 
 def spec_time(
     x:torch.FloatTensor,
+    max_masked_bins,
+    mask_size,
 )->torch.FloatTensor:
     """
     x: (N,C,S)
@@ -74,6 +76,8 @@ def spec_time(
 
 def spec_freq(
     x:torch.FloatTensor,
+    max_masked_bins,
+    mask_size,
 )->torch.FloatTensor:
     """
     x: (N,C,S)
