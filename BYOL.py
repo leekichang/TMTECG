@@ -66,8 +66,8 @@ class BYOL:
         self.criterion    = BYOLLoss(args.t).to(self.device)
         self.optimizer    = utils.build_optimizer(self.online_model, args)
         
-        self.dataset      = None # utils.load_dataset(args, is_train=True)
-        self.dataloader   = None # DataLoader(self.dataset, batch_size=args.batch_size, shuffle=True , drop_last=True )
+        self.dataset      = None # assigned in self.train()
+        self.dataloader   = None # assigned in self.train()
         self.augmentator  = ops.Augmentator()
         
         self.data_chunks  = [file for file in os.listdir(f'./dataset/TMT_unlabeled') if file.endswith('.npz')]
