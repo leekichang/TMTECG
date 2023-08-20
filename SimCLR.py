@@ -96,7 +96,8 @@ class SimCLR:
                 X2, _    = self.augmentator(X, augs) # -> Need to Augment in (B,C,S) -> (2*B,C,S)
                 del X
                 
-                z1, z2 = self.model(X1), self.model(X2) # calculate each feature
+                z1 = self.model.projector(self.model(X1))
+                z2 = self.model.projector(self.model(X2)) # calculate each feature
                 
                 loss = self.criterion(z1, z2)                   
                 loss.backward()
