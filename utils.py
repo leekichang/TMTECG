@@ -29,9 +29,10 @@ def parse_args():
     parser.add_argument('--epochs', help='Epochs', type=int, default=100)
     parser.add_argument('--seed', help='random seed', type=int, default=0)
     
-    parser.add_argument('--t', help='temperature for BYOL', type=float, default=0.5)
+    parser.add_argument('--t', help='temperature for SimCLR', type=float, default=0.5)
     parser.add_argument('--ma_decay', help='Moving average decay', type=float, default=0.9)
     
+    parser.add_argument('--datapath', type=str, default='./dataset')
     parser.add_argument('--test_batch', type=int, default=2048)
     parser.add_argument('--ckpt_epoch', type=int, default=3)
     
@@ -39,7 +40,7 @@ def parse_args():
     return args
 
 def load_dataset(args, is_train):
-    return getattr(datamanger, args.dataset)(args.stage, is_train)
+    return getattr(datamanger, args.dataset)(args.stage, is_train, path=args.datapath)
 
 def build_model(args):
     model, model_type = args.model.split('_')

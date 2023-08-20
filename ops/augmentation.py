@@ -7,7 +7,7 @@ import copy
 import torch
 import random
 import torch.nn as nn
-import spec_aug
+import ops.spec_aug as spec_aug
 
 __all__ = [
     'Augmentator'
