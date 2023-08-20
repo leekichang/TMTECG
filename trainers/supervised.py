@@ -99,7 +99,7 @@ class SupervisedTrainer:
 
     def print_train_info(self):
         print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss[self.epoch]:>6.4f} Test Loss:{self.test_loss[self.epoch]:>6.4f} Test Accuracy:{self.accs[self.epoch]:>5.2f}%', flush=True)
-        print(f'({self.epoch+1:03}/{self.epochs}) recall:{self.recalls[self.epoch]:>6.2f} f1:{self.f1s[self.epoch]:>6.4f} specification:{self.specs[self.epoch]:>5.2f}%', flush=True)
+        print(f'({self.epoch+1:03}/{self.epochs}) recall:{self.recalls[self.epoch]:>6.4f} f1:{self.f1s[self.epoch]:>6.4f} specification:{self.specs[self.epoch]:>5.4f}%', flush=True)
 
 if __name__ == '__main__':
     from tqdm import tqdm
