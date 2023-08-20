@@ -89,7 +89,7 @@ class BYOL:
         self.online_model.train()
         losses = []
         chunk_idxs = [idx+1 for idx in range(len(self.data_chunks))]
-        random.shuffle(chunk_idxs)
+        random.shuffle(chunk_idxs)          # shuffle chunk index to mitigate sequential bias
         for chunk_idx in tqdm(chunk_idxs):
             self.args.stage = chunk_idx
             self.dataset    = utils.load_dataset(args, is_train=True)
@@ -97,8 +97,11 @@ class BYOL:
             for X in self.dataloader:
                 self.optimizer.zero_grad()
                 X = X.to(self.device)
-                X1, X2 = self.augmentator(X), self.augmentator(X)
+                X1, augs = self.augmentator(X, None) 
+                X2, _    = self.augmentator(X, augs)
                 del X
+                del augs
+                
                 z_i_1 = self.online_model.predictor(self.online_model(X1))
                 z_i_2 = self.online_model.predictor(self.online_model(X2))
                 
