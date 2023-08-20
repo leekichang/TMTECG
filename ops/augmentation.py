@@ -129,11 +129,11 @@ class Augmentator(nn.Module):
                 p=self.p
             ),
             RandomApply(
-                spec_time,
+                lambda x: spec_time(x, max_masked_bins=random.randint(1, 2), mask_size=random.uniform(2, 5)),
                 p=self.p
             ),
             RandomApply(
-                spec_freq,
+                lambda x: spec_freq(x, max_masked_bins=random.randint(1, 2), mask_size=random.uniform(2, 5)),
                 p=self.p
             ),
         )
@@ -152,4 +152,3 @@ if __name__ == '__main__':
         out1, augs1 = augmentator(x, None)
         out2, augs2 = augmentator(x, augs1)
         print(augs1, augs2)
-        
