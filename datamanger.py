@@ -15,7 +15,8 @@ def minmax_scaling(data, new_min=0, new_max=1):
     return scaled_data
 
 class TMT(Dataset):
-    def __init__(self, stage, is_train, path='./dataset/TMT_labeled'):
+    def __init__(self, stage, is_train, path='./dataset'):
+        path = path+'/TMT_labeled'
         is_train = 'train' if is_train else 'test'
         if stage != 'all':
             self.data   = np.load(f'{path}/STAGE{stage}_X_{is_train}.npy').transpose(0,2,1)
@@ -41,7 +42,8 @@ class TMT(Dataset):
         return data_item, label_item
 
 class TMT_Full(Dataset):
-    def __init__(self, idx, is_train=None, path='./dataset/TMT_unlabeled'):
+    def __init__(self, idx, is_train=None, path='./dataset'):
+        path = path+'/TMT_unlabeled'
         self.npz       = np.load(f'{path}/BATCH{idx}.npz')
         self.data      = self.npz['data'].transpose(0,2,1)
         print(f"{len(self.npz['count'])} Patients!, Total {sum(self.npz['count'])} Sample in Shape {self.data.shape}")
