@@ -93,6 +93,9 @@ class SupervisedTrainer:
         self.specs.append(spec)
         self.TB_WRITER.add_scalar(f'Test Loss', np.mean(losses), self.epoch+1)
         self.TB_WRITER.add_scalar(f'Test Accuracy', acc, self.epoch+1)
+        self.TB_WRITER.add_scalar(f'Recall', recall, self.epoch+1)
+        self.TB_WRITER.add_scalar(f'F1-Score', f1, self.epoch+1)
+        self.TB_WRITER.add_scalar(f'Specificity', spec, self.epoch+1)
     
     def save_model(self):
         torch.save(self.model.state_dict(), f'{self.save_path}/{self.epoch+1}.pth')
