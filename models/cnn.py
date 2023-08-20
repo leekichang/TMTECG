@@ -60,7 +60,7 @@ class CNN(nn.Module):
         self.drop_outs   = nn.ModuleList([nn.Dropout(0.1) for _ in range(3)])
         
         self.head        = nn.Linear(in_features=self.config['linear'][0], out_features=self.config['linear'][1])
-        self.predictor   = MLP(dim=self.config['linear'][1], hidden_size=512)
+        self.projector   = MLP(dim=self.config['linear'][1], hidden_size=512)
         if num_class != 0:
             self.classifier  = nn.Linear(in_features=self.config['linear'][1]*self.config['groups'], out_features=num_class)
         else:
