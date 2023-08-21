@@ -13,12 +13,11 @@ import models
 import trainers
 import datamanger
 import config as cfg
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', help='experiement name', type=str, default='CNN_B_CMSC')
     parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg'])
-    parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT', 'TMT_Full'])
+    parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT', 'TMT_Full', 'TMT_labeled_Full'])
     parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
     parser.add_argument('--stage', help='Stage of TMT', type=str, default='1', choices=['SITTING', '1', '2', '3', '4', 'all', '#1', '#2', '#3', 'resting'])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
@@ -36,9 +35,21 @@ def parse_args():
     parser.add_argument('--datapath', type=str, default='./dataset')
     parser.add_argument('--test_batch', type=int, default=2048)
     parser.add_argument('--ckpt_epoch', type=int, default=3)
+    
+    parser.add_argument('--use_tb', type=str2bool, default=False)
 
     args = parser.parse_args()
     return args
+
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def load_dataset(args, is_train):
     return getattr(datamanger, args.dataset)(args.stage, is_train, path=args.datapath)
@@ -47,8 +58,9 @@ def build_model(args):
     model, model_type = args.model.split('_')
     return getattr(models, model)(model_type=model_type, num_class=cfg.N_CLASS[args.dataset])
 
-def build_criterion(args):
-    class_weights = torch.tensor([0.4, 0.6])
+def build_criterion(args, class_weight=0.5):
+    class_weights = torch.tensor([1-class_weight, class_weight])
+    print(f"Weighted Loss) Negative: {class_weights[0]:.2f} Positive: {class_weights[1]:.2f}")
     return getattr(nn, args.loss)(weight = class_weights)
 
 def build_optimizer(model, args):
