@@ -12,7 +12,7 @@ import torch
 import numpy as np
 from datetime import datetime
 from torch.utils.data import DataLoader
-from sklearn.metrics import recall_score, f1_score
+from sklearn.metrics import recall_score, f1_score, balanced_accuracy_score, roc_auc_score
 
 import utils
 
@@ -44,6 +44,8 @@ class SupervisedTrainer:
         self.recall     = None
         self.f1         = None
         self.spec       = None
+        self.bal_acc    = None
+        self.auroc      = None
         
         self.TB_WRITER = tb.SummaryWriter(f'./tensorboard/{str(datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))}_{self.args.exp_name}') \
             if self.args.use_tb else None
@@ -71,30 +73,34 @@ class SupervisedTrainer:
     @torch.no_grad()
     def test(self):
         self.model.eval()
-        preds, targets, losses = [], [], []
+        probs, targets, losses = [], [], []
         for X, Y in self.test_loader:
             X, Y = X.to(self.device), Y.to(self.device)
             pred = self.model(X)
             loss = self.criterion(pred, Y)
+            prob = torch.softmax(pred, dim=1)
             
-            preds.append(pred.cpu().numpy())
+            probs.append(prob.cpu().numpy())
             targets.append(Y.cpu().numpy())
             losses.append(loss.item())
-            
-        preds = np.concatenate(preds)
+        
+        probs = np.concatenate(probs)
         targets = np.concatenate(targets)
         
-        acc    = utils.calculate_topk_accuracy(torch.from_numpy(preds), torch.from_numpy(targets), k=1)
-        recall = recall_score(y_true=targets, y_pred=np.argmax(preds, axis=-1))
-        f1     = f1_score(y_true=targets, y_pred=np.argmax(preds, axis=-1))
-        spec   = utils.specificity_score(y_true=targets, y_pred=np.argmax(preds, axis=-1))
-
+        acc     = utils.calculate_topk_accuracy(torch.from_numpy(probs), torch.from_numpy(targets), k=1)
+        recall  = recall_score(y_true=targets, y_pred=np.argmax(probs, axis=-1))
+        f1      = f1_score(y_true=targets, y_pred=np.argmax(probs, axis=-1))
+        spec    = utils.specificity_score(y_true=targets, y_pred=np.argmax(probs, axis=-1))
+        bal_acc = balanced_accuracy_score(y_true=targets, y_pred=np.argmax(probs, axis=-1))
+        auroc   = roc_auc_score(y_true=targets, y_score=probs[:, 1])
         
         self.test_loss = np.mean(losses)
         self.acc       = acc
         self.recall    = recall
         self.f1        = f1
         self.spec      = spec
+        self.bal_acc   = bal_acc
+        self.auroc     = auroc
         
         if self.args.use_tb:
             self.TB_WRITER.add_scalar(f'Test Loss', self.test_loss, self.epoch+1)
@@ -102,6 +108,8 @@ class SupervisedTrainer:
             self.TB_WRITER.add_scalar(f'Recall', recall, self.epoch+1)
             self.TB_WRITER.add_scalar(f'F1-Score', f1, self.epoch+1)
             self.TB_WRITER.add_scalar(f'Specificity', spec, self.epoch+1)
+            self.TB_WRITER.add_scalar(f'Test Accuracy (Balanced)', bal_acc, self.epoch+1)
+            self.TB_WRITER.add_scalar(f'AUROC', auroc, self.epoch+1)
     
     def save_model(self):
         torch.save(self.model.state_dict(), f'{self.save_path}/{self.epoch+1}.pth')

@@ -37,6 +37,7 @@ def parse_args():
     parser.add_argument('--ckpt_epoch', type=int, default=3)
     
     parser.add_argument('--use_tb', type=str2bool, default=False)
+    parser.add_argument('--is_whole', type=str2bool, default=False)
 
     args = parser.parse_args()
     return args
@@ -52,7 +53,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def load_dataset(args, is_train):
-    return getattr(datamanger, args.dataset)(args.stage, is_train, path=args.datapath)
+    return getattr(datamanger, args.dataset)(args.stage, is_train, path=args.datapath, is_whole=args.is_whole)
 
 def build_model(args):
     model, model_type = args.model.split('_')

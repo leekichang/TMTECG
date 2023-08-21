@@ -15,11 +15,12 @@ def minmax_scaling(data, new_min=0, new_max=1):
     return scaled_data
 
 class TMT(Dataset):
-    def __init__(self, stage, is_train, path='./dataset'):
+    def __init__(self, stage, is_train, path='./dataset', is_whole=False):
         '''
         stage in [1, 2, 3, 4, #1, #2, #3, resting, SITTING]
         '''
-        path = path+'/TMT_labeled'
+        is_whole = '_Whole' if is_whole else ''
+        path = path+'/TMT_labeled'+is_whole
         is_train = 'train' if is_train else 'test'
 
         self.npz    = np.load(f'{path}/STAGE{stage}_{is_train}.npz')
@@ -27,7 +28,7 @@ class TMT(Dataset):
         self.labels = torch.LongTensor(self.npz['target'])
         self.data   = torch.FloatTensor(self.data*0.1)
         
-        print(self.data.shape, self.labels.shape)
+        print(f'{is_train} data: {self.data.shape} target: {self.labels.shape}')
             
     def __len__(self):
         return len(self.data)
@@ -38,7 +39,7 @@ class TMT(Dataset):
         return data_item, label_item
 
 class TMT_Full(Dataset):
-    def __init__(self, idx, is_train=None, path='./dataset'):
+    def __init__(self, idx, is_train=None, path='./dataset', is_whole=None):
         path = path+'/TMT_unlabeled'
         self.npz       = np.load(f'{path}/BATCH{idx}.npz')
         self.data      = self.npz['data'].transpose(0,2,1)
