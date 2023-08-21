@@ -72,7 +72,7 @@ class BYOL:
         
         self.data_chunks  = [file for file in os.listdir(f'./dataset/TMT_unlabeled') if file.endswith('.npz')]
 
-        self.train_loss = []
+        self.train_loss = 0
         
         self.TB_WRITER = tb.SummaryWriter(f'./tensorboard/{str(datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))}_{self.args.exp_name}')
         
@@ -117,8 +117,8 @@ class BYOL:
                 self.optimizer.step()
                 self.target_update()
                 losses.append(loss.item())
-        self.train_loss.append(np.mean(losses))
-        self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)
+        self.train_loss = np.mean(losses)
+        self.TB_WRITER.add_scalar("Train Loss", self.train_loss, self.epoch+1)
     
     @torch.no_grad()
     def test(self):
@@ -128,7 +128,7 @@ class BYOL:
         torch.save(self.online_model.state_dict(), f'{self.save_path}/{self.epoch+1}.pth')
 
     def print_train_info(self):
-        print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss[self.epoch]:>6.4f}', flush=True)
+        print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss:>6.4f}', flush=True)
 
 if __name__ == '__main__':
     from tqdm import tqdm

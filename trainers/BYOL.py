@@ -102,8 +102,8 @@ class BYOL:
                 del X
                 del augs
                 
-                z_i_1 = self.online_model.predictor(self.online_model(X1))
-                z_i_2 = self.online_model.predictor(self.online_model(X2))
+                z_i_1 = self.online_model.projector(self.online_model(X1))
+                z_i_2 = self.online_model.projector(self.online_model(X2))
                 
                 with torch.no_grad():
                     z_j_1 = self.target_model(X2)

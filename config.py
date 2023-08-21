@@ -1,5 +1,6 @@
 N_CLASS = {
     'TMT' :2,
+    'TMT_labeled_Full':2,
     'TMT_Full' :0,
 }
 

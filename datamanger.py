@@ -15,23 +15,20 @@ def minmax_scaling(data, new_min=0, new_max=1):
     return scaled_data
 
 class TMT(Dataset):
-    def __init__(self, stage, is_train, path='./dataset'):
-        path = path+'/TMT_labeled'
+    def __init__(self, stage, is_train, path='./dataset', is_whole=False):
+        '''
+        stage in [1, 2, 3, 4, #1, #2, #3, resting, SITTING]
+        '''
+        is_whole = '_Whole' if is_whole else ''
+        path = path+'/TMT_labeled'+is_whole
         is_train = 'train' if is_train else 'test'
-        if stage != 'all':
-            self.data   = np.load(f'{path}/STAGE{stage}_X_{is_train}.npy').transpose(0,2,1)
-            self.data   = torch.FloatTensor(self.data*0.1)
-            self.labels = torch.LongTensor(np.load(f'{path}/STAGE{stage}_Y_{is_train}.npy'))
-        else:
-            self.data, self.labels = [], []
-            for i in range(4):
-                chunk_X = np.load(f'{path}/STAGE{i+1}_X_{is_train}.npy').transpose(0,2,1)
-                chunk_Y = np.load(f'{path}/STAGE{i+1}_Y_{is_train}.npy')
-                self.data.append(chunk_X)
-                self.labels.append(chunk_Y)
-            self.data = torch.FloatTensor(np.concatenate(self.data, axis=0)*0.1)
-            self.labels = torch.LongTensor(np.concatenate(self.labels, axis=0))
-            print(self.data.shape, self.labels.shape)
+
+        self.npz    = np.load(f'{path}/STAGE{stage}_{is_train}.npz')
+        self.data   = self.npz['data'].transpose(0,2,1)
+        self.labels = torch.LongTensor(self.npz['target'])
+        self.data   = torch.FloatTensor(self.data*0.1)
+        
+        print(f'{is_train} data: {self.data.shape} target: {self.labels.shape}')
             
     def __len__(self):
         return len(self.data)
@@ -42,7 +39,7 @@ class TMT(Dataset):
         return data_item, label_item
 
 class TMT_Full(Dataset):
-    def __init__(self, idx, is_train=None, path='./dataset'):
+    def __init__(self, idx, is_train=None, path='./dataset', is_whole=None):
         path = path+'/TMT_unlabeled'
         self.npz       = np.load(f'{path}/BATCH{idx}.npz')
         self.data      = self.npz['data'].transpose(0,2,1)
