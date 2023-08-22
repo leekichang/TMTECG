@@ -12,6 +12,8 @@ dataset/
 checkpoints/
 tensorboard/
 use_this_data/
+results/
+result_summaries/
 
 # Distribution / packaging
 .Python

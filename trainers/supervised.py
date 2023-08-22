@@ -115,7 +115,7 @@ class SupervisedTrainer:
         torch.save(self.model.state_dict(), f'{self.save_path}/{self.epoch+1}.pth')
 
     def print_train_info(self):
-        print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss:>6.4f} Test Loss:{self.test_loss:>6.4f} Test Accuracy:{self.acc:>5.2f}% recall:{self.recall:>6.4f} f1:{self.f1:>6.4f} specification:{self.spec:>5.4f}', flush=True)
+        print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss:>6.4f} Test Loss:{self.test_loss:>6.4f} Test Accuracy:{self.acc:>5.2f}% recall:{self.recall:>6.4f} f1:{self.f1:>6.4f} specification:{self.spec:>5.4f} auroc:{self.auroc:>5.4f}', flush=True)
 
 if __name__ == '__main__':
     from tqdm import tqdm
