@@ -15,13 +15,22 @@ model_config={
                 'kernel' : 7,
                 'stride' : 3,
                 'linear' :[320,256],
-                'groups' :1},
+                'groups' :1,
+                'n_stage':6,},
+                
+                'single_B':{'channel':[12, 4, 16, 32],
+                'kernel' : 7,
+                'stride' : 3,
+                'linear' :[320,256],
+                'groups' :1,
+                'n_stage':1,},
             
                 'Bg':{'channel':[12*1, 12*4, 12*16, 12*32],
                 'kernel' : 7,
                 'stride' : 3,
                 'linear' :[320,256],
-                'groups' :12}
+                'groups' :12,
+                'n_stage':6,}
           }
 
 class ConvBlock(nn.Module):
@@ -62,21 +71,23 @@ class CNN(nn.Module):
         self.head        = nn.Linear(in_features=self.config['linear'][0], out_features=self.config['linear'][1])
         self.projector   = MLP(dim=self.config['linear'][1], hidden_size=512)
         if num_class != 0:
-            self.classifier  = nn.Linear(in_features=self.config['linear'][1]*self.config['groups'], out_features=num_class)
+            self.classifier  = nn.Linear(in_features=self.config['linear'][1]*self.config['n_stage'], out_features=num_class)
         else:
             self.classifier  = nn.Identity()
     
     def forward(self, x):
+        B = x.size(0)
+        x = x.reshape((x.size(0)*self.config['n_stage'], x.size(2), x.size(3)))
         for idx in range(len(self.convBlocks)):
             x = self.drop_outs[idx](self.convBlocks[idx](x))
-        x = self.head(x.reshape(x.size(0), self.config['groups'], -1))
+        x = self.head(x.reshape(B, self.config['n_stage'], -1))
         x = self.classifier(x.reshape(x.size(0), -1))
         return x
     
 
 if __name__ == '__main__':
     model = CNN('B')
-    x = torch.randn(1, 12, 2500)
-    print(x.shape)
+    x = torch.randn(2, 6, 12, 2500)
+    print(0, x.shape)
     out = model(x)
     print(out.shape)
