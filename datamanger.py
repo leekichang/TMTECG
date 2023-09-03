@@ -3,10 +3,14 @@ Created on Thu Aug 17 2023
 @author: Kichang Lee
 @contact: kichan.lee@yonsei.ac.kr
 """
+import os
 import torch
 import numpy as np
+import config as cfg
+from tqdm import tqdm
 from torchvision import transforms
 from torch.utils.data import Dataset
+from concurrent.futures import ThreadPoolExecutor
 
 def minmax_scaling(data, new_min=0, new_max=1):
     data_min = np.min(data, axis=1, keepdims=True)
@@ -15,36 +19,50 @@ def minmax_scaling(data, new_min=0, new_max=1):
     return scaled_data
 
 class TMT(Dataset):
-    def __init__(self, stage, is_train, path='./dataset', is_whole=False):
+    def __init__(self, is_train, path='./dataset', data_types=cfg.DATA_TYPES['non_angio']):
         '''
         stage in [1, 2, 3, 4, #1, #2, #3, resting, SITTING]
         '''
-        is_whole = '_Whole' if is_whole else ''
-        path = path+'/TMT_labeled'+is_whole
-        is_train = 'train' if is_train else 'test'
-
-        self.npz    = np.load(f'{path}/STAGE{stage}_{is_train}.npz')
-        self.data   = self.npz['data'].transpose(0,2,1)
-        self.labels = torch.LongTensor(self.npz['target'])
-        self.data   = torch.FloatTensor(self.data*0.1)
+        self.patient, self.data, self.labels  = [], [], []
+        for t in data_types:
+            path_ = f'{path}/{t}/train' if is_train else f'{path}/{t}/test'
+            files = [file for file in os.listdir(path_) if file.endswith('.npz')]
+            data_and_labels = self.load_data_parallel(files, path_)
+            for data, label in data_and_labels:
+                self.data.append(data)
+                self.labels.append(label)
+            # for file in tqdm(files):
+            #     file = np.load(f'{path_}/{file}')
+            #     self.data.append(file['data'])
+            #     self.labels.append(file['label'])
+        self.data   = torch.FloatTensor(np.array(self.data))
+        self.labels = torch.LongTensor(np.array(self.labels))
+        print(f'{"Train" if is_train else "Test"} data: {self.data.shape} target: {self.labels.shape}')
         
-        print(f'{is_train} data: {self.data.shape} target: {self.labels.shape}')
-            
+    def load_data(self, file, path):
+        file_path = f'{path}/{file}'
+        file_data = np.load(file_path)
+        return file_data['data'], file_data['label']
+
+    def load_data_parallel(self, files, path):
+        with ThreadPoolExecutor(max_workers=12) as executor:
+            data_and_labels = list(tqdm(executor.map(lambda file: self.load_data(file, path), files), total=len(files)))
+        return data_and_labels
+    
     def __len__(self):
-        return len(self.data)
+        return len(self.labels)
     
     def __getitem__(self, idx):
-        data_item  = self.data[idx,:]
+        data_item  = self.data[idx]
         label_item = self.labels[idx]
         return data_item, label_item
 
 class TMT_Full(Dataset):
-    def __init__(self, idx, is_train=None, path='./dataset', is_whole=None):
-        path = path+'/TMT_unlabeled'
+    def __init__(self, idx, is_train=None, path='./dataset'):
+        path = path+'/full'
         self.npz       = np.load(f'{path}/BATCH{idx}.npz')
-        self.data      = self.npz['data'].transpose(0,2,1)
-        print(f"{len(self.npz['count'])} Patients!, Total {sum(self.npz['count'])} Sample in Shape {self.data.shape}")
-        self.data      = torch.FloatTensor(self.data*0.1)
+        self.data      = self.npz['data']
+        self.data      = torch.FloatTensor(self.data)
         
     def __len__(self):
         return len(self.data)
@@ -58,17 +76,20 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
     import utils
     
-    args       = utils.parse_args()
-    stage      = 'STAGE1'
-    dataset    = utils.load_dataset(args, is_train=True)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True , drop_last=True )
+    args         = utils.parse_args()
+    args.dataset = 'whole'
+    dataset      = utils.load_dataset(args, is_train=True)
+    print(1-torch.sum(dataset.labels)/len(dataset), torch.sum(dataset.labels)/len(dataset))
+    dataset      = utils.load_dataset(args, is_train=False)
+    dataloader   = DataLoader(dataset, batch_size=args.batch_size, shuffle=True , drop_last=True )
     
-    model = utils.build_model(args)
-    model = model.to('cuda')
+    # model = utils.build_model(args)
+    # model = model.to('cuda')
     
     for data, target in tqdm(dataloader):
         print(data.shape, target.shape)
-        data, target = data.to('cuda'), target.to('cuda')
-        out = model(data)
         break
-    print(data.shape, out.shape)
+    #     data, target = data.to('cuda'), target.to('cuda')
+    #     out = model(data)
+    #     break
+    # print(data.shape, out.shape)

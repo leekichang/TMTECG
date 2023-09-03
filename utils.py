@@ -17,16 +17,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', help='experiement name', type=str, default='CNN_B_CMSC')
     parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg'])
-    parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT', 'TMT_Full', 'TMT_labeled_Full'])
+    parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT', 'TMT_Full'])
+    parser.add_argument('--trainset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole'])
+    parser.add_argument('--testset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole'])
     parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
-    parser.add_argument('--stage', help='Stage of TMT', type=str, default='1', choices=['SITTING', '1', '2', '3', '4', 'all', '#1', '#2', '#3', 'resting'])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
     parser.add_argument('--optimizer', help='Optimizer', type=str, default='AdamW')
     parser.add_argument('--lr', help='Learning rate', type=float, default=0.001)
     parser.add_argument('--decay', help='Weight decay', type=float, default=0.01)
     parser.add_argument('--batch_size', help='Batch size', type=int, default=128)
     parser.add_argument('--epochs', help='Epochs', type=int, default=100)
-    parser.add_argument('--ckpt_freq', type=int, default=1)
+    parser.add_argument('--ckpt_freq', type=int, default=20)
     parser.add_argument('--seed', help='random seed', type=int, default=0)
     
     parser.add_argument('--t', help='temperature for SimCLR', type=float, default=0.5)
@@ -37,7 +38,6 @@ def parse_args():
     parser.add_argument('--ckpt_epoch', type=int, default=3)
     
     parser.add_argument('--use_tb', type=str2bool, default=False)
-    parser.add_argument('--is_whole', type=str2bool, default=False)
 
     args = parser.parse_args()
     return args
@@ -53,7 +53,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def load_dataset(args, is_train):
-    return getattr(datamanger, args.dataset)(args.stage, is_train, path=args.datapath, is_whole=args.is_whole)
+    return getattr(datamanger, 'TMT')(is_train, path=args.datapath, data_types=cfg.DATA_TYPES[args.dataset])
 
 def build_model(args):
     model, model_type = args.model.split('_')
