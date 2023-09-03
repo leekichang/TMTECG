@@ -12,7 +12,7 @@ import torch
 import numpy as np
 from datetime import datetime
 from torch.utils.data import DataLoader
-from sklearn.metrics import recall_score, f1_score, balanced_accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score, recall_score, f1_score, balanced_accuracy_score, roc_auc_score, roc_curve, confusion_matrix, auc
 
 import utils
 
@@ -27,12 +27,13 @@ class SupervisedTrainer:
         self.epoch        = 0
         self.epochs       = args.epochs
         self.device       = 'cuda' if torch.cuda.is_available() else 'cpu'
-        
+        args.dataset      = args.trainset
         self.trainset     = utils.load_dataset(args, is_train=True)
-        self.testset      = utils.load_dataset(args, is_train=False)
-        self.model        = utils.build_model(args).to(self.device)
         class_weight      = torch.sum(self.trainset.labels)/len(self.trainset)
         self.criterion    = utils.build_criterion(args, class_weight).to(self.device)
+        args.dataset      = args.testset
+        self.testset      = utils.load_dataset(args, is_train=False)
+        self.model        = utils.build_model(args).to(self.device)
         self.optimizer    = utils.build_optimizer(self.model, args)
         
         self.train_loader = DataLoader(self.trainset, batch_size=args.batch_size, shuffle=True , drop_last=True )
@@ -41,7 +42,7 @@ class SupervisedTrainer:
         self.train_loss = None
         self.test_loss  = None
         self.acc        = None
-        self.recall     = None
+        self.sens       = None
         self.f1         = None
         self.spec       = None
         self.bal_acc    = None
@@ -87,16 +88,26 @@ class SupervisedTrainer:
         probs = np.concatenate(probs)
         targets = np.concatenate(targets)
         
-        acc     = utils.calculate_topk_accuracy(torch.from_numpy(probs), torch.from_numpy(targets), k=1)
-        recall  = recall_score(y_true=targets, y_pred=np.argmax(probs, axis=-1))
-        f1      = f1_score(y_true=targets, y_pred=np.argmax(probs, axis=-1))
-        spec    = utils.specificity_score(y_true=targets, y_pred=np.argmax(probs, axis=-1))
-        bal_acc = balanced_accuracy_score(y_true=targets, y_pred=np.argmax(probs, axis=-1))
+        
+        
+        fpr, tpr, thresholds = roc_curve(targets, probs[:, 1])
+        sensitivity = tpr
+        specificity = 1 - fpr
+        j_index = sensitivity + specificity - 1
+        best_threshold_idx = np.argmax(j_index)
+        best_threshold = thresholds[best_threshold_idx]
+        binary_predictions = (probs[:, 1] > best_threshold).astype(int)
+        
+        acc     = accuracy_score(y_true=targets, y_pred=binary_predictions)
+        sens    = recall_score(y_true=targets, y_pred=binary_predictions)
+        f1      = f1_score(y_true=targets, y_pred=binary_predictions)
+        spec    = utils.specificity_score(y_true=targets, y_pred=binary_predictions)
+        bal_acc = balanced_accuracy_score(y_true=targets, y_pred=binary_predictions)
         auroc   = roc_auc_score(y_true=targets, y_score=probs[:, 1])
         
         self.test_loss = np.mean(losses)
         self.acc       = acc
-        self.recall    = recall
+        self.sens      = sens
         self.f1        = f1
         self.spec      = spec
         self.bal_acc   = bal_acc
@@ -105,7 +116,7 @@ class SupervisedTrainer:
         if self.args.use_tb:
             self.TB_WRITER.add_scalar(f'Test Loss', self.test_loss, self.epoch+1)
             self.TB_WRITER.add_scalar(f'Test Accuracy', self.acc, self.epoch+1)
-            self.TB_WRITER.add_scalar(f'Recall', recall, self.epoch+1)
+            self.TB_WRITER.add_scalar(f'Sensitivity', sens, self.epoch+1)
             self.TB_WRITER.add_scalar(f'F1-Score', f1, self.epoch+1)
             self.TB_WRITER.add_scalar(f'Specificity', spec, self.epoch+1)
             self.TB_WRITER.add_scalar(f'Test Accuracy (Balanced)', bal_acc, self.epoch+1)
@@ -115,7 +126,7 @@ class SupervisedTrainer:
         torch.save(self.model.state_dict(), f'{self.save_path}/{self.epoch+1}.pth')
 
     def print_train_info(self):
-        print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss:>6.4f} Test Loss:{self.test_loss:>6.4f} Test Accuracy:{self.acc:>5.2f}% recall:{self.recall:>6.4f} f1:{self.f1:>6.4f} specification:{self.spec:>5.4f} auroc:{self.auroc:>5.4f}', flush=True)
+        print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss:>6.4f} Test Loss:{self.test_loss:>6.4f} Test Accuracy:{self.acc*100:>5.2f}% Balanced Test Accuracy:{self.bal_acc*100:>5.2f}% Sensitivity:{self.sens:>6.4f} f1:{self.f1:>6.4f} specificity:{self.spec:>5.4f} AUROC:{self.auroc:>5.4f}', flush=True)
 
 if __name__ == '__main__':
     from tqdm import tqdm

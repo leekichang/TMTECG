@@ -51,9 +51,9 @@ if __name__ == '__main__':
     save_path = './results'
     os.makedirs(save_path, exist_ok=True)
     tb_path = './tensorboard'
-    interest = 'SimCLR_4096_27_1e-4'
+    interest = 'whole-'
     folders = [os.path.join(tb_path, folder) for folder in os.listdir(tb_path) if interest in folder]
-    metric_keys = ['Recall', 'Specificity', 'F1-Score', 'Test Accuracy', 'Test Loss', 'AUROC', 'Test Accuracy (Balanced)', 'Train Loss']
+    metric_keys = ['Sensitivity', 'Specificity', 'F1-Score', 'Test Accuracy', 'Test Loss', 'AUROC', 'Test Accuracy (Balanced)', 'Train Loss']
     metrics_dict = defaultdict(list)
     for folder in folders:
         file = os.listdir(folder)
