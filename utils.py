@@ -52,7 +52,7 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def load_dataset(args, is_train):
+def load_dataset(args, is_train=True):
     data_type    = args.trainset if is_train else args.testset    
     dataset_type = 'TMT' if cfg.N_CLASS[args.dataset]==2 else 'TMT_Full'
     return getattr(datamanger, dataset_type)(is_train, path=args.datapath, data_types=cfg.DATA_TYPES[data_type])
