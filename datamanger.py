@@ -19,7 +19,7 @@ def minmax_scaling(data, new_min=0, new_max=1):
     return scaled_data
 
 class TMT(Dataset):
-    def __init__(self, is_train, path='./dataset', data_types=cfg.DATA_TYPES['non_angio']):
+    def __init__(self, is_train, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
         '''
         stage in [1, 2, 3, 4, #1, #2, #3, resting, SITTING]
         '''
@@ -58,18 +58,35 @@ class TMT(Dataset):
         return data_item, label_item
 
 class TMT_Full(Dataset):
-    def __init__(self, idx, is_train=None, path='./dataset'):
-        path = path+'/full'
-        self.npz       = np.load(f'{path}/BATCH{idx}.npz')
-        self.data      = self.npz['data']
-        self.data      = torch.FloatTensor(self.data)
-        
+    '''
+    batch w.r.t the subjects?
+    each subject has different number of samples
+    main thread load N user's data and run the train phase
+    other threads load another batch?
+    '''
+    def __init__(self, idx, is_train=None, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
+        path = path+'/full/train'
+        self.subjects = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.npz')]
+        self.data = self.load_data_parallel(self.subjects)
+        print(np.shape(self.data))
+    
+    def load_data(self, file):
+        file_data = np.load(file)
+        return file_data['data']
+
+    def load_data_parallel(self, files):
+        with ThreadPoolExecutor(max_workers=12) as executor:
+            data = list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
+        return data
+
     def __len__(self):
-        return len(self.data)
+        pass
+        #return len(self.data)
     
     def __getitem__(self, idx):
-        data_item  = self.data[idx,:]
-        return data_item
+        pass
+        # data_item  = self.data[idx,:]
+        # return data_item
 
 if __name__ == '__main__':
     from tqdm import tqdm
@@ -77,18 +94,18 @@ if __name__ == '__main__':
     import utils
     
     args         = utils.parse_args()
-    args.dataset = 'whole'
-    dataset      = utils.load_dataset(args, is_train=True)
-    print(1-torch.sum(dataset.labels)/len(dataset), torch.sum(dataset.labels)/len(dataset))
-    dataset      = utils.load_dataset(args, is_train=False)
-    dataloader   = DataLoader(dataset, batch_size=args.batch_size, shuffle=True , drop_last=True )
+    args.dataset = 'full'
+    dataset      = utils.load_dataset(args)
+    # print(1-torch.sum(dataset.labels)/len(dataset), torch.sum(dataset.labels)/len(dataset))
+    # dataset      = utils.load_dataset(args, is_train=False)
+    # dataloader   = DataLoader(dataset, batch_size=args.batch_size, shuffle=True , drop_last=True )
     
     # model = utils.build_model(args)
     # model = model.to('cuda')
     
-    for data, target in tqdm(dataloader):
-        print(data.shape, target.shape)
-        break
+    # for data, target in tqdm(dataloader):
+    #     print(data.shape, target.shape)
+    #     break
     #     data, target = data.to('cuda'), target.to('cuda')
     #     out = model(data)
     #     break
