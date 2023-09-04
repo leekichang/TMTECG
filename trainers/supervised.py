@@ -27,11 +27,9 @@ class SupervisedTrainer:
         self.epoch        = 0
         self.epochs       = args.epochs
         self.device       = 'cuda' if torch.cuda.is_available() else 'cpu'
-        args.dataset      = args.trainset
         self.trainset     = utils.load_dataset(args, is_train=True)
         class_weight      = torch.sum(self.trainset.labels)/len(self.trainset)
         self.criterion    = utils.build_criterion(args, class_weight).to(self.device)
-        args.dataset      = args.testset
         self.testset      = utils.load_dataset(args, is_train=False)
         self.model        = utils.build_model(args).to(self.device)
         self.optimizer    = utils.build_optimizer(self.model, args)

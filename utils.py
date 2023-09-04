@@ -17,9 +17,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', help='experiement name', type=str, default='CNN_B_CMSC')
     parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg'])
-    parser.add_argument('--dataset', help='Dataset', type=str, default='TMT', choices=['TMT', 'TMT_Full'])
-    parser.add_argument('--trainset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole'])
-    parser.add_argument('--testset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole'])
+    parser.add_argument('--dataset', help='Dataset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole', 'full'])
+    parser.add_argument('--trainset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole', 'full'])
+    parser.add_argument('--testset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole', 'full'])
     parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
     parser.add_argument('--optimizer', help='Optimizer', type=str, default='AdamW')
@@ -53,7 +53,9 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def load_dataset(args, is_train):
-    return getattr(datamanger, 'TMT')(is_train, path=args.datapath, data_types=cfg.DATA_TYPES[args.dataset])
+    data_type    = args.trainset if is_train else args.testset    
+    dataset_type = 'TMT' if cfg.N_CLASS[args.dataset]==2 else 'TMT_Full'
+    return getattr(datamanger, dataset_type)(is_train, path=args.datapath, data_types=cfg.DATA_TYPES[data_type])
 
 def build_model(args):
     model, model_type = args.model.split('_')
