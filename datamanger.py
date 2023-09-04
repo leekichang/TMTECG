@@ -19,7 +19,7 @@ def minmax_scaling(data, new_min=0, new_max=1):
     return scaled_data
 
 class TMT(Dataset):
-    def __init__(self, is_train, path='./dataset', data_types=cfg.DATA_TYPES['non_angio']):
+    def __init__(self, is_train, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
         '''
         stage in [1, 2, 3, 4, #1, #2, #3, resting, SITTING]
         '''
@@ -64,7 +64,7 @@ class TMT_Full(Dataset):
     main thread load N user's data and run the train phase
     other threads load another batch?
     '''
-    def __init__(self, idx, is_train=None, path='./dataset', data_types=cfg.DATA_TYPES['non_angio']):
+    def __init__(self, idx, is_train=None, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
         path = path+'/full/train'
         self.subjects = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.npz')]
         self.data = self.load_data_parallel(self.subjects)

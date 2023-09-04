@@ -17,9 +17,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', help='experiement name', type=str, default='CNN_B_CMSC')
     parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg'])
-    parser.add_argument('--dataset', help='Dataset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole', 'full'])
-    parser.add_argument('--trainset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole', 'full'])
-    parser.add_argument('--testset', type=str, default='non_angio', choices=['angio', 'non_angio', 'whole', 'full'])
+    parser.add_argument('--dataset', help='Dataset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
+    parser.add_argument('--trainset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
+    parser.add_argument('--testset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
     parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
     parser.add_argument('--optimizer', help='Optimizer', type=str, default='AdamW')
@@ -28,8 +28,7 @@ def parse_args():
     parser.add_argument('--batch_size', help='Batch size', type=int, default=128)
     parser.add_argument('--epochs', help='Epochs', type=int, default=100)
     parser.add_argument('--ckpt_freq', type=int, default=20)
-    parser.add_argument('--seed', help='random seed', type=int, default=0)
-    
+     
     parser.add_argument('--t', help='temperature for SimCLR', type=float, default=0.5)
     parser.add_argument('--ma_decay', help='Moving average decay', type=float, default=0.9)
     

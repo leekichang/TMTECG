@@ -1,14 +1,14 @@
 N_CLASS = {
     'angio'    :2,
-    'non_angio':2,
+    'cad'      :2,
     'whole'    :2,
     'full'     :0,
 }
 
 DATA_TYPES = {
     'angio'    : ['angio'],
-    'non_angio': ['angio', 'non_angio'],
-    'whole'    : ['angio', 'non_angio', 'whole'],
+    'cad'      : ['angio', 'cad'],
+    'whole'    : ['angio', 'cad', 'whole'],
     'full'     : None
 }
 
