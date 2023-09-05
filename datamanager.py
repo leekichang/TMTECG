@@ -4,7 +4,6 @@ Created on Thu Aug 17 2023
 @contact: kichan.lee@yonsei.ac.kr
 """
 import os
-import copy
 import torch
 import queue
 import random
@@ -13,7 +12,6 @@ import numpy as np
 import config as cfg
 from tqdm import tqdm
 import torch.nn.functional as F
-from torchvision import transforms
 from torch.utils.data import Dataset
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
@@ -64,11 +62,10 @@ class TMT_Full(Dataset):
     def __init__(self, is_train=None, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
         path = path+'/full/train'
         self.subjects_  = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.npz')]
-        print(len(self.subjects_))
-        self.subjects_  = self.subjects_[15000:]
+        # self.subjects_  = self.subjects_[15000:]
         self.subjects   = None
         
-        self.chunk_size = 100
+        self.chunk_size = 1000
         self.chunk_idx  = 0
         self.num_chunks = len(self.subjects_) // self.chunk_size + 1
         self.data       = None # self.load_data_parallel(self.subjects[self.chunk_idx])
@@ -81,7 +78,6 @@ class TMT_Full(Dataset):
         self.split_subject()
         if self.next_data == None:
             self.data = self.load_data_parallel(self.subjects[self.chunk_idx])
-            print(self.data.shape)
         else:
             self.update()
     
@@ -124,16 +120,16 @@ def load_data(file):
 
 def load_data_parallel(files):
     with ThreadPoolExecutor(max_workers=12) as executor:
-        data = list(executor.map(lambda file: load_data(file), files))# list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
+        data = list(executor.map(lambda file: load_data(file), files)) # list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
     data = torch.FloatTensor(np.concatenate(data))
     return data
 
 def load_next_chunk(chunk_idx, num_chunks, files):
     if chunk_idx < num_chunks:
-        next_data = load_data_parallel(files) # subjects[chunk_idx+1])
+        next_data = load_data_parallel(files)
     else:
         chunk_idx = -1
-        next_data = load_data_parallel(files) # subjects[chunk_idx+1])
+        next_data = load_data_parallel(files)
     return chunk_idx, next_data
 
 def background_loading(chunk_idx, num_chunks, files, data_queue):
@@ -153,7 +149,7 @@ if __name__ == '__main__':
     
     
     
-    data_queue = multiprocessing.Queue()
+    # data_queue = multiprocessing.Queue()
     
     
     for epoch in range(2):
@@ -164,7 +160,6 @@ if __name__ == '__main__':
             background_thread = threading.Thread(target=background_loading, args=(dataset.chunk_idx, dataset.num_chunks, dataset.subjects[chunk_idx], data_queue))
             background_thread.daemon = True
             background_thread.start()
-            # background_thread.join()
             dataloader   = DataLoader(dataset, batch_size=128, shuffle=False, drop_last=False)
             for idx, data in enumerate(dataloader):
                 if idx % 10 == 0:
@@ -175,18 +170,3 @@ if __name__ == '__main__':
             dataset.next_data = next_data
             dataset.update()
         
-        
-    # print(1-torch.sum(dataset.labels)/len(dataset), torch.sum(dataset.labels)/len(dataset))
-    # dataset      = utils.load_dataset(args, is_train=False)
-    # dataloader   = DataLoader(dataset, batch_size=args.batch_size, shuffle=True , drop_last=True )
-    
-    # model = utils.build_model(args)
-    # model = model.to('cuda')
-    
-    # for data, target in tqdm(dataloader):
-    #     print(data.shape, target.shape)
-    #     break
-    #     data, target = data.to('cuda'), target.to('cuda')
-    #     out = model(data)
-    #     break
-    # print(data.shape, out.shape)

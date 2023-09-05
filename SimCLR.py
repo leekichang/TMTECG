@@ -9,14 +9,16 @@ __all__ = [
 
 import os
 import copy
+import queue
 import torch
 import random
+import threading
 import numpy as np
+from tqdm import tqdm
 import torch.nn as nn
 from datetime import datetime
 from torch.utils.data import DataLoader
 from sklearn.metrics import recall_score, f1_score
-from tqdm import tqdm
 import ops
 import utils
 
@@ -67,15 +69,16 @@ class SimCLR:
         self.criterion    = SimCLRLoss(args.t).to(self.device)
         self.optimizer    = utils.build_optimizer(self.model, args)
         
-        self.dataset      = None # assigned in self.train()
+        self.dataset      = utils.load_dataset(args) #None # assigned in self.train()
+        self.dataset.setup()
+        
         self.dataloader   = None # assigned in self.train()
         self.augmentator  = ops.Augmentator()
         
-        self.data_chunks  = [file for file in os.listdir(f'{args.datapath}/TMT_unlabeled') if file.endswith('.npz')]
-
         self.train_loss = []
         
-        self.TB_WRITER = tb.SummaryWriter(f'./tensorboard/{str(datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))}_{self.args.exp_name}')
+        if self.args.use_tb:
+            self.TB_WRITER = tb.SummaryWriter(f'./tensorboard/{str(datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))}_{self.args.exp_name}')
         
         total_params = sum(p.numel() for p in self.model.parameters())
         print(f'model name:{args.model}\ndataset:{args.dataset}\ndevice:{self.device}\nTotal parameter:{total_params:,}')
@@ -83,11 +86,14 @@ class SimCLR:
     def train(self):
         self.model.train()
         losses = []
-        chunk_idxs = [idx+1 for idx in range(len(self.data_chunks))]
-        random.shuffle(chunk_idxs)          # shuffle chunk index to mitigate sequential bias
-        for chunk_idx in tqdm(chunk_idxs):
-            self.args.stage = chunk_idx
-            self.dataset    = utils.load_dataset(args, is_train=True)
+        
+        for chunk_idx in tqdm(range(self.dataset.num_chunks)):
+            data_queue = queue.Queue()
+            completion_event = threading.Event()
+            background_thread = threading.Thread(target=utils.background_loading, \
+                args=(self.dataset.chunk_idx, self.dataset.num_chunks, self.dataset.subjects[chunk_idx], data_queue))
+            background_thread.daemon = True
+            background_thread.start()
             self.dataloader = DataLoader(self.dataset, batch_size=self.args.batch_size, shuffle=True, drop_last=True)
             for X in self.dataloader:
                 self.optimizer.zero_grad()
@@ -103,8 +109,13 @@ class SimCLR:
                 loss.backward()
                 self.optimizer.step()
                 losses.append(loss.item())
+            chunk_idx, next_data = data_queue.get()
+            self.dataset.chunk_idx = chunk_idx
+            self.dataset.next_data = next_data
+            self.dataset.update()            
         self.train_loss.append(np.mean(losses))
-        self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)
+        if self.args.use_tb:
+            self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)
     
     @torch.no_grad()
     def test(self):
