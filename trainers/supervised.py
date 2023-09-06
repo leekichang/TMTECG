@@ -10,6 +10,7 @@ __all__ = [
 import os
 import torch
 import numpy as np
+import torch.nn as nn
 from datetime import datetime
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, recall_score, f1_score, balanced_accuracy_score, roc_auc_score, roc_curve, confusion_matrix, auc
@@ -32,6 +33,7 @@ class SupervisedTrainer:
         self.criterion    = utils.build_criterion(args, class_weight).to(self.device)
         self.testset      = utils.load_dataset(args, is_train=False)
         self.model        = utils.build_model(args).to(self.device)
+        
         self.optimizer    = utils.build_optimizer(self.model, args)
         
         self.train_loader = DataLoader(self.trainset, batch_size=args.batch_size, shuffle=True , drop_last=True )
@@ -51,7 +53,6 @@ class SupervisedTrainer:
         
         total_params = sum(p.numel() for p in self.model.parameters())
         print(f'model name:{args.model}\ndataset:{args.dataset}\ndevice:{self.device}\nTensorboard:{self.args.use_tb}\nTotal parameter:{total_params:,}')
-        
 
     def train(self):
         self.model.train()
@@ -126,6 +127,27 @@ class SupervisedTrainer:
     def print_train_info(self):
         print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss:>6.4f} Test Loss:{self.test_loss:>6.4f} Test Accuracy:{self.acc*100:>5.2f}% Balanced Test Accuracy:{self.bal_acc*100:>5.2f}% Sensitivity:{self.sens:>6.4f} f1:{self.f1:>6.4f} specificity:{self.spec:>5.4f} AUROC:{self.auroc:>5.4f}', flush=True)
 
+    def set_phase(self):
+        self.model = utils.build_model(self.args).to(self.device)
+        if self.args.phase == 'randominit':
+            print("TRAINING FROM SCRATCH!")
+        elif self.args.phase == 'finetune':
+            print("DOWNSTREAM WITH TRIANING BACKBONE!")
+            classifier = self.model.classifier
+            self.model.classifier = None
+            self.model.load_state_dict(torch.load(f'./checkpoints/{self.args.ckpt_path}/{self.args.ckpt_epoch}.pth'))
+            self.model.classifier = classifier
+        elif self.args.phase == 'linear':
+            print("DOWNSTREAM WITHOUT TRIANING BACKBONE!")
+            classifier = self.model.classifier
+            self.model.classifier = None
+            self.model.load_state_dict(torch.load(f'./checkpoints/{self.args.ckpt_path}/{self.args.ckpt_epoch}.pth'))
+            for param in self.model.parameters():
+                param.requires_grad = False
+            self.model.classifier = classifier
+            
+            
+    
 if __name__ == '__main__':
     from tqdm import tqdm
     args = utils.parse_args()

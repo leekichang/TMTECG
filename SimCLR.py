@@ -94,7 +94,7 @@ class SimCLR:
                 args=(self.dataset.chunk_idx, self.dataset.num_chunks, self.dataset.subjects[chunk_idx], data_queue))
             background_thread.daemon = True
             background_thread.start()
-            self.dataloader = DataLoader(self.dataset, batch_size=self.args.batch_size, shuffle=True, drop_last=True)
+            self.dataloader = DataLoader(self.dataset, batch_size=self.args.batch_size, shuffle=True, drop_last=False)
             for X in self.dataloader:
                 self.optimizer.zero_grad()
                 X = X.to(self.device)
@@ -112,7 +112,8 @@ class SimCLR:
             chunk_idx, next_data = data_queue.get()
             self.dataset.chunk_idx = chunk_idx
             self.dataset.next_data = next_data
-            self.dataset.update()            
+            self.dataset.update()
+                  
         self.train_loss.append(np.mean(losses))
         if self.args.use_tb:
             self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)

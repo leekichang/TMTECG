@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument('--dataset', help='Dataset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
     parser.add_argument('--trainset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
     parser.add_argument('--testset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
-    parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'cl'])
+    parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'SimCLR', 'BYOL'])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
     parser.add_argument('--optimizer', help='Optimizer', type=str, default='AdamW')
     parser.add_argument('--lr', help='Learning rate', type=float, default=0.001)
@@ -36,6 +36,7 @@ def parse_args():
     
     parser.add_argument('--datapath', type=str, default='./dataset')
     parser.add_argument('--test_batch', type=int, default=2048)
+    parser.add_argument('--ckpt_path', type=str, default='SimCLR_4096_aug_pretrain')
     parser.add_argument('--ckpt_epoch', type=int, default=3)
     
     parser.add_argument('--use_tb', type=str2bool, default=False)
@@ -55,7 +56,7 @@ def str2bool(v):
 
 def load_dataset(args, is_train=True):
     data_type    = args.trainset if is_train else args.testset    
-    dataset_type = 'TMT' if cfg.N_CLASS[args.dataset]==2 else 'TMT_Full'
+    dataset_type = 'TMT' if args.phase in ['finetune', 'linear', 'randominit'] else 'TMT_Full'
     return getattr(datamanager, dataset_type)(is_train, path=args.datapath, data_types=cfg.DATA_TYPES[data_type])
 
 def build_model(args):
@@ -98,7 +99,7 @@ def load_data(file):
 def load_data_parallel(files):
     with ThreadPoolExecutor(max_workers=12) as executor:
         data = list(executor.map(lambda file: load_data(file), files)) # list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
-    data = torch.FloatTensor(np.concatenate(data))
+    data = torch.FloatTensor(np.concatenate(data)) if 'full' in files[0] else torch.FloatTensor(np.array(data))
     return data
 
 def load_next_chunk(chunk_idx, num_chunks, files):

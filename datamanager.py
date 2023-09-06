@@ -60,14 +60,19 @@ class TMT(Dataset):
 
 class TMT_Full(Dataset):
     def __init__(self, is_train=None, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
-        path = path+'/full/train'
-        self.subjects_  = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.npz')]
+        self.subjects_ = []
+        self.data_types = data_types
+        for t in self.data_types:
+            path_ = f'{path}/{t}/train'
+            files = [os.path.join(path_, file) for file in os.listdir(path_) if file.endswith('.npz')]
+            self.subjects_ = self.subjects_ + files
+        # self.subjects_  = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.npz')]
         # self.subjects_  = self.subjects_[15000:]
         self.subjects   = None
         
-        self.chunk_size = 1000
+        self.chunk_size = 4096
         self.chunk_idx  = 0
-        self.num_chunks = len(self.subjects_) // self.chunk_size + 1
+        self.num_chunks = len(self.subjects_)//self.chunk_size + (0 if len(self.subjects_)%self.chunk_size==0 else 1)
         self.data       = None # self.load_data_parallel(self.subjects[self.chunk_idx])
         self.next_data  = None
 
@@ -103,10 +108,11 @@ class TMT_Full(Dataset):
         self.data = self.next_data
     
     def load_data_parallel(self, files):
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            data = list(executor.map(lambda file: self.load_data(file), files))# list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
-        data = torch.FloatTensor(np.concatenate(data))
-        return data
+        if len(files) > 0:
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                data = list(executor.map(lambda file: self.load_data(file), files))# list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
+            data = torch.FloatTensor(np.concatenate(data)) if 'full' in files[0] else torch.FloatTensor(np.array(data))
+            return data
 
     def __len__(self):
         return len(self.data)
@@ -119,10 +125,11 @@ def load_data(file):
     return file_data['data']
 
 def load_data_parallel(files):
-    with ThreadPoolExecutor(max_workers=12) as executor:
-        data = list(executor.map(lambda file: load_data(file), files)) # list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
-    data = torch.FloatTensor(np.concatenate(data))
-    return data
+    if len(files) > 0:
+        with ThreadPoolExecutor(max_workers=12) as executor:
+            data = list(executor.map(lambda file: load_data(file), files)) # list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
+        data = torch.FloatTensor(np.concatenate(data)) if 'full' in files[0] else torch.FloatTensor(np.array(data))
+        return data
 
 def load_next_chunk(chunk_idx, num_chunks, files):
     if chunk_idx < num_chunks:
@@ -144,7 +151,7 @@ if __name__ == '__main__':
     import time
     
     args         = utils.parse_args()
-    args.dataset = 'full'
+    args.dataset = 'whole'
     dataset      = utils.load_dataset(args)
     
     

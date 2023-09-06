@@ -18,7 +18,7 @@ model_config={
                 'groups' :1,
                 'n_stage':6,},
                 
-                'single_B':{'channel':[12, 4, 16, 32],
+                'single-B':{'channel':[12, 4, 16, 32],
                 'kernel' : 7,
                 'stride' : 3,
                 'linear' :[320,256],
@@ -69,7 +69,7 @@ class CNN(nn.Module):
         self.drop_outs   = nn.ModuleList([nn.Dropout(0.1) for _ in range(3)])
         
         self.head        = nn.Linear(in_features=self.config['linear'][0], out_features=self.config['linear'][1])
-        self.projector   = MLP(dim=self.config['linear'][1], hidden_size=512)
+        self.projector   = MLP(dim=self.config['linear'][1]*self.config['n_stage'], hidden_size=512)
         if num_class != 0:
             self.classifier  = nn.Linear(in_features=self.config['linear'][1]*self.config['n_stage'], out_features=num_class)
         else:
@@ -77,7 +77,8 @@ class CNN(nn.Module):
     
     def forward(self, x):
         B = x.size(0)
-        x = x.reshape((x.size(0)*self.config['n_stage'], x.size(2), x.size(3)))
+        if len(x.shape) == 4:
+            x = x.reshape((x.size(0)*self.config['n_stage'], x.size(2), x.size(3)))
         for idx in range(len(self.convBlocks)):
             x = self.drop_outs[idx](self.convBlocks[idx](x))
         x = self.head(x.reshape(B, self.config['n_stage'], -1))
