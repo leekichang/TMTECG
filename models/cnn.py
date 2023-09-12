@@ -46,6 +46,7 @@ class ConvBlock(nn.Module):
     def forward(self, x):
         x = self.convs(x)
         return x
+    
 def MLP(dim, hidden_size=512):
     return nn.Sequential(
         nn.Linear(dim, hidden_size),
@@ -69,7 +70,7 @@ class CNN(nn.Module):
         self.drop_outs   = nn.ModuleList([nn.Dropout(0.1) for _ in range(3)])
         
         self.head        = nn.Linear(in_features=self.config['linear'][0], out_features=self.config['linear'][1])
-        self.projector   = MLP(dim=self.config['linear'][1]*self.config['n_stage'], hidden_size=512)
+        self.projector   = MLP(dim=self.config['linear'][1]*self.config['n_stage'], hidden_size=512*self.config['n_stage'])
         if num_class != 0:
             self.classifier  = nn.Linear(in_features=self.config['linear'][1]*self.config['n_stage'], out_features=num_class)
         else:

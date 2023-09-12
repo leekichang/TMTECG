@@ -13,7 +13,6 @@ import config as cfg
 from tqdm import tqdm
 import torch.nn.functional as F
 from torch.utils.data import Dataset
-import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 
 def minmax_scaling(data, new_min=0, new_max=1):
@@ -70,7 +69,7 @@ class TMT_Full(Dataset):
         # self.subjects_  = self.subjects_[15000:]
         self.subjects   = None
         
-        self.chunk_size = 4096
+        self.chunk_size = 250
         self.chunk_idx  = 0
         self.num_chunks = len(self.subjects_)//self.chunk_size + (0 if len(self.subjects_)%self.chunk_size==0 else 1)
         self.data       = None # self.load_data_parallel(self.subjects[self.chunk_idx])
@@ -150,11 +149,11 @@ if __name__ == '__main__':
     import utils
     import time
     
-    args         = utils.parse_args()
-    args.dataset = 'whole'
-    dataset      = utils.load_dataset(args)
-    
-    
+    args          = utils.parse_args()
+    args.dataset  = 'full'
+    args.trainset = 'full'
+    args.phase    = 'SimCLR'
+    dataset       = utils.load_dataset(args)
     
     # data_queue = multiprocessing.Queue()
     
@@ -171,7 +170,6 @@ if __name__ == '__main__':
             for idx, data in enumerate(dataloader):
                 if idx % 10 == 0:
                     print(idx, dataset.chunk_idx, data.shape)
-                    time.sleep(0.25)
             chunk_idx, next_data = data_queue.get()
             dataset.chunk_idx = chunk_idx
             dataset.next_data = next_data

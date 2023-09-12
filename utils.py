@@ -112,5 +112,5 @@ def load_next_chunk(chunk_idx, num_chunks, files):
 
 def background_loading(chunk_idx, num_chunks, files, data_queue):
     chunk_idx, next_data = load_next_chunk(chunk_idx, num_chunks, files)
-    # print(f'{chunk_idx+1} data ready! SHAPE: {next_data.shape}')
+    print(f'{chunk_idx+1} data ready! SHAPE: {next_data.shape}', flush=True)
     return data_queue.put((chunk_idx, next_data))

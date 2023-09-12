@@ -32,7 +32,8 @@ class SupervisedTrainer:
         class_weight      = torch.sum(self.trainset.labels)/len(self.trainset)
         self.criterion    = utils.build_criterion(args, class_weight).to(self.device)
         self.testset      = utils.load_dataset(args, is_train=False)
-        self.model        = utils.build_model(args).to(self.device)
+        self.model        = None
+        self.set_phase()
         
         self.optimizer    = utils.build_optimizer(self.model, args)
         
@@ -128,24 +129,34 @@ class SupervisedTrainer:
         print(f'({self.epoch+1:03}/{self.epochs}) Train Loss:{self.train_loss:>6.4f} Test Loss:{self.test_loss:>6.4f} Test Accuracy:{self.acc*100:>5.2f}% Balanced Test Accuracy:{self.bal_acc*100:>5.2f}% Sensitivity:{self.sens:>6.4f} f1:{self.f1:>6.4f} specificity:{self.spec:>5.4f} AUROC:{self.auroc:>5.4f}', flush=True)
 
     def set_phase(self):
-        self.model = utils.build_model(self.args).to(self.device)
+        self.model = utils.build_model(self.args)
         if self.args.phase == 'randominit':
             print("TRAINING FROM SCRATCH!")
         elif self.args.phase == 'finetune':
-            print("DOWNSTREAM WITH TRIANING BACKBONE!")
+            print("DOWNSTREAM TASK WITH TRIANING BACKBONE!")
             classifier = self.model.classifier
             self.model.classifier = None
-            self.model.load_state_dict(torch.load(f'./checkpoints/{self.args.ckpt_path}/{self.args.ckpt_epoch}.pth'))
+            self.model.projector = None
+            pretrained_weight = torch.load(f'./checkpoints/{self.args.ckpt_path}/{self.args.ckpt_epoch}.pth')
+            filtered_weights  = self.model.state_dict()
+            for layer in filtered_weights:
+                filtered_weights[layer] = pretrained_weight[layer]
+            self.model.load_state_dict(filtered_weights)
             self.model.classifier = classifier
         elif self.args.phase == 'linear':
-            print("DOWNSTREAM WITHOUT TRIANING BACKBONE!")
+            print("DOWNSTREAM TASK WITHOUT TRIANING BACKBONE!")
             classifier = self.model.classifier
             self.model.classifier = None
-            self.model.load_state_dict(torch.load(f'./checkpoints/{self.args.ckpt_path}/{self.args.ckpt_epoch}.pth'))
+            self.model.projector = None
+            pretrained_weight = torch.load(f'./checkpoints/{self.args.ckpt_path}/{self.args.ckpt_epoch}.pth')
+            filtered_weights  = self.model.state_dict()
+            for layer in filtered_weights:
+                filtered_weights[layer] = pretrained_weight[layer]
+            self.model.load_state_dict(filtered_weights)
             for param in self.model.parameters():
                 param.requires_grad = False
             self.model.classifier = classifier
-            
+        self.model = self.model.to(self.device)
             
     
 if __name__ == '__main__':

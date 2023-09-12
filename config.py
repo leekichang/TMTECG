@@ -9,7 +9,7 @@ DATA_TYPES = {
     'angio'    : ['angio'],
     'cad'      : ['angio', 'cad'],
     'whole'    : ['angio', 'cad', 'whole'],
-    'full'     : None
+    'full'     : ['full']
 }
 
 TRAINER = {
