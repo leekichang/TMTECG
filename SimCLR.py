@@ -18,7 +18,7 @@ from tqdm import tqdm
 import torch.nn as nn
 from datetime import datetime
 from torch.utils.data import DataLoader
-from sklearn.metrics import recall_score, f1_score
+
 import ops
 import utils
 
@@ -65,6 +65,7 @@ class SimCLR:
         self.device       = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         self.model        = utils.build_model(args).to(self.device)
+        self.model.classifier = nn.Identity().to(self.device)
         
         self.criterion    = SimCLRLoss(args.t).to(self.device)
         self.optimizer    = utils.build_optimizer(self.model, args)
