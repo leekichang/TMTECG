@@ -1,0 +1,7 @@
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name CMSC_finetune_angio --dataset angio --trainset angio --testset angio --model CNN_B --batch_size 128 --phase finetune --ckpt_path CMSC_4096_pretrain --ckpt_epoch 50 > ./log/CMSC_finetune_angio.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name CMSC_finetune_cad   --dataset cad   --trainset cad   --testset angio --model CNN_B --batch_size 128 --phase finetune --ckpt_path CMSC_4096_pretrain --ckpt_epoch 50 > ./log/CMSC_finetune_cad.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name CMSC_finetune_whole --dataset whole --trainset whole --testset angio --model CNN_B --batch_size 128 --phase finetune --ckpt_path CMSC_4096_pretrain --ckpt_epoch 50 > ./log/CMSC_finetune_whole.out
+
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name CMSC_linear_angio --dataset angio --trainset angio --testset angio --model CNN_B --batch_size 128 --phase linear --ckpt_path CMSC_4096_pretrain --ckpt_epoch 50 > ./log/CMSC_linear_angio.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name CMSC_linear_cad   --dataset cad   --trainset cad   --testset angio --model CNN_B --batch_size 128 --phase linear --ckpt_path CMSC_4096_pretrain --ckpt_epoch 50 > ./log/CMSC_linear_cad.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name CMSC_linear_whole --dataset whole --trainset whole --testset angio --model CNN_B --batch_size 128 --phase linear --ckpt_path CMSC_4096_pretrain --ckpt_epoch 50 > ./log/CMSC_linear_whole.out

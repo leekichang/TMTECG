@@ -4,7 +4,7 @@ Created on Thu Aug 20 2023
 @contact: kichang.lee@yonsei.ac.kr
 """
 __all__ = [
-    'SimCLR',
+    'CMSC',
     ]
 
 import os
@@ -23,9 +23,9 @@ import ops
 import utils
 
 import torch.utils.tensorboard as tb
-class SimCLRLoss(nn.Module):
+class CMSCLoss(nn.Module):
     def __init__(self, temperature=0.5):
-        super(SimCLRLoss, self).__init__()
+        super(CMSCLoss, self).__init__()
         self.temperature = temperature
     
     def forward(self, z_i, z_j):
@@ -54,7 +54,7 @@ class SimCLRLoss(nn.Module):
         return loss
         
     
-class SimCLR:
+class CMSC:
     def __init__(self, args):
         self.args         = args
         self.save_path    = f'./checkpoints/{args.exp_name}'
@@ -67,11 +67,13 @@ class SimCLR:
         self.model        = utils.build_model(args).to(self.device)
         self.model.classifier = nn.Identity().to(self.device)
         
-        self.criterion    = SimCLRLoss(args.t).to(self.device)
+        self.criterion    = CMSCLoss(args.t).to(self.device)
         self.optimizer    = utils.build_optimizer(self.model, args)
         
         self.dataset      = utils.load_dataset(args) #None # assigned in self.train()
         self.dataset.setup()
+        
+        self.data_shape   = (-1, 12, 5000)
         
         self.dataloader   = None # assigned in self.train()
         self.augmentator  = ops.Augmentator()
@@ -92,13 +94,14 @@ class SimCLR:
             data_queue = queue.Queue()
             completion_event = threading.Event()
             background_thread = threading.Thread(target=utils.background_loading, \
-                args=(self.dataset.chunk_idx, self.dataset.num_chunks, self.dataset.subjects[chunk_idx], data_queue))
+                args=(self.dataset.chunk_idx, self.dataset.num_chunks, self.dataset.subjects[chunk_idx], data_queue, self.data_shape))
             background_thread.daemon = True
             background_thread.start()
             self.dataloader = DataLoader(self.dataset, batch_size=self.args.batch_size, shuffle=True, drop_last=False)
             for X in self.dataloader:
                 self.optimizer.zero_grad()
                 X = X.to(self.device)
+                X1, X2   = X[:, :, :2500], X[:, :, 2500:]
                 X1, augs = self.augmentator(X, None)
                 X2, _    = self.augmentator(X, augs) # -> Need to Augment in (B,C,S) -> (2*B,C,S)
                 del X
@@ -106,7 +109,7 @@ class SimCLR:
                 z1 = self.model.projector(self.model(X1))
                 z2 = self.model.projector(self.model(X2)) # calculate each feature
                 
-                loss = self.criterion(z1, z2)                   
+                loss = self.criterion(z1, z2)
                 loss.backward()
                 self.optimizer.step()
                 losses.append(loss.item())
@@ -133,7 +136,7 @@ if __name__ == '__main__':
     from tqdm import tqdm
     args = utils.parse_args()
     torch.manual_seed(args.seed)
-    trainer = SimCLR(args)
+    trainer = CMSC(args)
     for epoch in tqdm(range(trainer.epochs)):
         trainer.train()
         trainer.test()
