@@ -48,7 +48,7 @@ You can select option for `dataset` between `angio`, `cad`, `whole`.
 python3 main.py --exp_name OURS_finetune_whole --dataset whole --trainset whole --testset cad --model CNN_B --batch_size 128 --phase finetune --ckpt_path OURS_pretrain --ckpt_epoch 5
 ```
 
-### Linear Proving
+### Linear Probing
 ```
 python3 main.py --exp_name OURS_finetune_whole --dataset whole --trainset whole --testset cad --model CNN_B --batch_size 128 --phase finetune --ckpt_path OURS_pretrain --ckpt_epoch 5
 ```
