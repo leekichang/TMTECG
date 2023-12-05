@@ -6,15 +6,27 @@ TreadMill Test ECG
 
 For model pretraining, this repository four contrastive learning based pretraining methods (i.e., BYOL, SimCLR, CMSC, OURS). The trained models are saved in `./checkpoints/{exp_name}`.
 
+### BYOL
+
 ```
 python BYOL.py --phase BYOL --dataset full --trainset full --batch_size 4096 --model CNN_single-B --use_tb T --exp_name BYOL_pretrain
+```
 
-python OURS.py --phase OURS --dataset full --trainset full --batch_size 4096 --model CNN_single-B --use_tb T --exp_name OURS_pretrain
-
+### SimCLR
+```
 python SimCLR.py --phase SimCLR --dataset full --trainset full --batch_size 4096 --model CNN_single-B --use_tb T --exp_name SimCLR_pretrain
+```
 
+### CMSC
+```
 python CMSC.py --phase CMSC --dataset full --trainset full --batch_size 4096 --model CNN_single-B --use_tb T --exp_name CMSC_pretrain
 ```
+
+### OURS
+```
+python OURS.py --phase OURS --dataset full --trainset full --batch_size 4096 --model CNN_single-B --use_tb T --exp_name OURS_pretrain
+```
+
 
 ## Model Evaluation
 For model evaluation, this repository supports `finetuning` and `linear-probing`.
