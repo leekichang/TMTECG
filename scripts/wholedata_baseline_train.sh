@@ -11,9 +11,9 @@
 #     eval ${cmd}
 # done
 conda activate aws_neuron_pytorch_p36
-for stage in 1 2 3 4 all SITTING resting '#1' '#2' '#3'; do
-    exp_name="whole_data_baseline_${stage}"
-    cmd="python main.py --stage '${stage}' --exp_name ${exp_name} --lr 0.0001 --use_tb True --is_whole True > ./log/${exp_name}.out"
+for stage in SITTING resting '#1' '#2' '#3'; do # 1 2 3 4 all SITTING resting '#1' '#2' '#3'; do
+    exp_name="baseline_whole_${stage}"
+    cmd="python main.py --stage '${stage}' --exp_name ${exp_name} --lr 0.0001 --batch_size 1024 --use_tb True --is_whole True > ./log/${exp_name}.out"
     echo "Running command: ${cmd}"
     eval ${cmd}
 done
