@@ -1,0 +1,7 @@
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name OURS_finetune_angio --dataset angio --trainset angio --testset cad --model CNN_B --batch_size 128 --phase finetune --ckpt_path OURS_pretrain --ckpt_epoch 100 > ./log/OURS_finetune_angio.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name OURS_finetune_cad   --dataset cad   --trainset cad   --testset cad --model CNN_B --batch_size 128 --phase finetune --ckpt_path OURS_pretrain --ckpt_epoch 100 > ./log/OURS_finetune_cad.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name OURS_finetune_whole --dataset whole --trainset whole --testset cad --model CNN_B --batch_size 128 --phase finetune --ckpt_path OURS_pretrain --ckpt_epoch 100 > ./log/OURS_finetune_whole.out
+
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name OURS_linear_angio --dataset angio --trainset angio --testset cad --model CNN_B --batch_size 128 --phase linear --ckpt_path OURS_pretrain --ckpt_epoch 100 > ./log/OURS_linear_angio.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name OURS_linear_cad   --dataset cad   --trainset cad   --testset cad --model CNN_B --batch_size 128 --phase linear --ckpt_path OURS_pretrain --ckpt_epoch 100 > ./log/OURS_linear_cad.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name OURS_linear_whole --dataset whole --trainset whole --testset cad --model CNN_B --batch_size 128 --phase linear --ckpt_path OURS_pretrain --ckpt_epoch 100 > ./log/OURS_linear_whole.out

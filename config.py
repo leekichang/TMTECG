@@ -18,4 +18,6 @@ TRAINER = {
     'randominit':'SupervisedTrainer',
     'BYOL':'BYOL',
     'SimCLR':'SimCLR',
+    'CMSC':'CMSC',
+    'OURS':'OURS'
 }

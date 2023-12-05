@@ -1,0 +1,3 @@
+python main.py --phase randominit --dataset angio --trainset angio --testset angio --exp_name vit_angio --model vit_B --epoch 100 --ckpt_freq 10
+python main.py --phase randominit --dataset cad   --trainset cad   --testset cad   --exp_name vit_cad   --model vit_B --epoch 100 --ckpt_freq 10
+python main.py --phase randominit --dataset whole --trainset whole --testset whole --exp_name vit_whole --model vit_B --epoch 100 --ckpt_freq 10

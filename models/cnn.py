@@ -56,7 +56,7 @@ def MLP(dim, hidden_size=512):
     )
 
 class CNN(nn.Module):
-    def __init__(self, model_type='Bg', num_class=2):
+    def __init__(self, model_type='B', num_class=2):
         super(CNN, self).__init__()
         self.config     = model_config[model_type]
         self.convBlocks = nn.ModuleList([])

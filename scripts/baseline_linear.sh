@@ -1,0 +1,3 @@
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name baseline_linear_angio --dataset angio --trainset angio --testset angio --model CNN_B --batch_size 128 --phase linear --ckpt_path scratch --ckpt_epoch 0 > ./log/baseline_linear_angio.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name baseline_linear_cad   --dataset cad   --trainset cad   --testset angio --model CNN_B --batch_size 128 --phase linear --ckpt_path scratch --ckpt_epoch 0 > ./log/baseline_linear_cad.out
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --exp_name baseline_linear_whole --dataset whole --trainset whole --testset angio --model CNN_B --batch_size 128 --phase linear --ckpt_path scratch --ckpt_epoch 0 > ./log/baseline_linear_whole.out

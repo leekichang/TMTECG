@@ -7,10 +7,12 @@ import os
 import torch
 import queue
 import random
+import pickle
 import threading
 import numpy as np
 import config as cfg
 from tqdm import tqdm
+from functools import partial
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from concurrent.futures import ThreadPoolExecutor
@@ -21,11 +23,12 @@ def minmax_scaling(data, new_min=0, new_max=1):
     scaled_data = new_min + (data - data_min) * (new_max - new_min) / (data_max - data_min)
     return scaled_data
 
+with open('./dataset/full/subject_ids.pickle', 'rb') as f:
+    SUBJECT_IDS = pickle.load(f)
+
 class TMT(Dataset):
-    def __init__(self, is_train, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
-        '''
-        stage in [1, 2, 3, 4, #1, #2, #3, resting, SITTING]
-        '''
+    def __init__(self, args, is_train, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
+        self.args = args
         self.patient, self.data, self.labels  = [], [], []
         for t in data_types:
             path_ = f'{path}/{t}/train' if is_train else f'{path}/{t}/test'
@@ -58,15 +61,15 @@ class TMT(Dataset):
 
 
 class TMT_Full(Dataset):
-    def __init__(self, is_train=None, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
+    def __init__(self, args, is_train=None, path='./dataset', data_types=cfg.DATA_TYPES['full']):
+        self.args = args
         self.subjects_ = []
         self.data_types = data_types
         for t in self.data_types:
             path_ = f'{path}/{t}/train'
             files = [os.path.join(path_, file) for file in os.listdir(path_) if file.endswith('.npz')]
             self.subjects_ = self.subjects_ + files
-        # self.subjects_  = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.npz')]
-        # self.subjects_  = self.subjects_[15000:]
+        
         self.subjects   = None
         
         self.chunk_size = 250
@@ -77,11 +80,13 @@ class TMT_Full(Dataset):
 
         self.data_queue = queue.Queue()
         
+        self.data_shape = (-1,12,5000) if self.args.phase in ['CMSC'] else (-1,12,2500)
+        
     def setup(self):
         self.shuffle_subject()        
         self.split_subject()
         if self.next_data == None:
-            self.data = self.load_data_parallel(self.subjects[self.chunk_idx])
+            self.data = load_data_parallel(self.subjects[self.chunk_idx], shape=self.data_shape)
         else:
             self.update()
     
@@ -91,57 +96,126 @@ class TMT_Full(Dataset):
     def split_subject(self):
         self.subjects = [self.subjects_[i:i + self.chunk_size] for i in range(0, len(self.subjects_), self.chunk_size)]
 
-    def load_data(self, file):
-        file_data = np.load(file)
-        return file_data['data']
-    
-    def load_next_chunk(self):
-        if self.chunk_idx < self.num_chunks:
-            self.next_data = self.load_data_parallel(self.subjects[self.chunk_idx+1])
-        else:
-            self.chunk_idx = -1
-            self.next_data = self.load_data_parallel(self.subjects[self.chunk_idx+1])
-            
     def update(self):
         self.chunk_idx += 1
         self.data = self.next_data
+        
+    # def load_data(self, file):
+    #     file_data = np.load(file)
+    #     return file_data['data']
     
-    def load_data_parallel(self, files):
-        if len(files) > 0:
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                data = list(executor.map(lambda file: self.load_data(file), files))# list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
-            data = torch.FloatTensor(np.concatenate(data)) if 'full' in files[0] else torch.FloatTensor(np.array(data))
-            return data
+    # def load_next_chunk(self):
+    #     if self.chunk_idx < self.num_chunks:
+    #         self.next_data = self.load_data_parallel(self.subjects[self.chunk_idx+1])
+    #     else:
+    #         self.chunk_idx = -1
+    #         self.next_data = self.load_data_parallel(self.subjects[self.chunk_idx+1])
+            
+    
+    # def load_data_parallel(self, files):
+    #     if len(files) > 0:
+    #         with ThreadPoolExecutor(max_workers=4) as executor:
+    #             data = list(executor.map(lambda file: self.load_data(file), files))
+    #         data = torch.FloatTensor(np.concatenate(data)) if 'full' in files[0] else torch.FloatTensor(np.array(data))
+    #         return data
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data['data'])
     
     def __getitem__(self, idx):
-        return self.data[idx]
+        data   = self.data['data'][idx]
+        id_    = self.data['id'][idx]
+        length = self.data['length'][idx]
+        return data, id_, length
 
-def load_data(file):
+def load_data(file, shape=(-1,12,5000)):
     file_data = np.load(file)
-    return file_data['data']
+    data = file_data['data']
+    id_  = SUBJECT_IDS[str(file_data['id'])]
+    result = {'data':None, 'id':None, 'length':None}
+    if shape[2] == 2500:
+        result['data']   = data
+        result['length'] = np.arange(data.shape[0])
+        result['id']     = np.ones(data.shape[0])*id_
+        return result
+    elif shape[2] == 5000:
+        B, _, _ = data.shape
+        if B % 2 == 0:
+            result['data']   = data.reshape(shape)
+            result['length'] = np.arange(data.shape[0])
+            result['id']     = np.ones(data.shape[0])*id_
+            if result['data'] is None:
+                print("FUCK")
+            return result
+        else:
+            result['data']   = data[:B-1].reshape(shape)
+            result['length'] = np.arange(result['data'].shape[0])
+            result['id']     = np.ones(result['data'].shape[0])*id_
+            if result['data'] is None:
+                print("FUCK")
+            return result
 
-def load_data_parallel(files):
+def load_data_parallel(files, shape):
     if len(files) > 0:
         with ThreadPoolExecutor(max_workers=12) as executor:
-            data = list(executor.map(lambda file: load_data(file), files)) # list(tqdm(executor.map(lambda file: self.load_data(file), files), total=len(files)))
-        data = torch.FloatTensor(np.concatenate(data)) if 'full' in files[0] else torch.FloatTensor(np.array(data))
-        return data
+            # load_data 함수에 shape를 전달하기 위해 partial을 사용
+            load_data_partial = partial(load_data, shape=shape)
+            
+            # map 함수를 사용하여 병렬로 데이터를 로드하고 결과를 수집
+            results = list(executor.map(load_data_partial, files))
 
-def load_next_chunk(chunk_idx, num_chunks, files):
+        # 결과에서 필요한 부분을 추출하여 새로운 데이터 구조 생성
+        data = {
+            'data'  : torch.FloatTensor(np.concatenate([result['data'] for result in results if result['data'] is not None])),
+            'id'    : torch.LongTensor(np.concatenate([result['id'] for result in results])),
+            'length': torch.LongTensor(np.concatenate([result['length'] for result in results]))
+        }
+
+        return data
+    
+def load_next_chunk(chunk_idx, num_chunks, files, shape):
     if chunk_idx < num_chunks:
-        next_data = load_data_parallel(files)
+        next_data = load_data_parallel(files, shape)
     else:
         chunk_idx = -1
-        next_data = load_data_parallel(files)
+        next_data = load_data_parallel(files, shape)
     return chunk_idx, next_data
 
-def background_loading(chunk_idx, num_chunks, files, data_queue):
-    chunk_idx, next_data = load_next_chunk(chunk_idx, num_chunks, files)
-    print(f'{chunk_idx+1} data ready! SHAPE: {next_data.shape}')
+def background_loading(chunk_idx, num_chunks, files, data_queue, shape):
+    chunk_idx, next_data = load_next_chunk(chunk_idx, num_chunks, files, shape)
+    print(f'{chunk_idx+1} data ready! SHAPE: {next_data["data"].shape}', flush=True)
     return data_queue.put((chunk_idx, next_data))
+
+# def load_data(file, shape=(-1,12,5000)):
+#     file_data = np.load(file)
+#     data = file_data['data']
+#     B, _, _ = data.shape
+#     if B % 2 == 0:
+#         return data.reshape(shape)
+#     else:
+#         return data[:B-1].reshape(shape)
+
+# def load_data_parallel(files, shape):
+#     if len(files) > 0:
+#         with ThreadPoolExecutor(max_workers=12) as executor:
+#             load_data_partial = partial(load_data, shape=shape)
+#             data = list(executor.map(load_data_partial, files))
+#             # data = list(executor.map(lambda file: load_data(file), files))
+#         data = torch.FloatTensor(np.concatenate(data)) if 'full' in files[0] else torch.FloatTensor(np.array(data))
+#         return data
+
+# def load_next_chunk(chunk_idx, num_chunks, files, shape):
+#     if chunk_idx < num_chunks:
+#         next_data = load_data_parallel(files, shape)
+#     else:
+#         chunk_idx = -1
+#         next_data = load_data_parallel(files, shape)
+#     return chunk_idx, next_data
+
+# def background_loading(chunk_idx, num_chunks, files, data_queue, shape):
+#     chunk_idx, next_data = load_next_chunk(chunk_idx, num_chunks, files, shape)
+#     # print(f'{chunk_idx+1} data ready! SHAPE: {next_data.shape}')
+#     return data_queue.put((chunk_idx, next_data))
 
 if __name__ == '__main__':
     from tqdm import tqdm
@@ -156,14 +230,13 @@ if __name__ == '__main__':
     dataset       = utils.load_dataset(args)
     
     # data_queue = multiprocessing.Queue()
-    
-    
+    shape = (-1, 12, 5000)
     for epoch in range(2):
         dataset.setup()
         for chunk_idx in tqdm(range(dataset.num_chunks)):
             data_queue = queue.Queue()
             completion_event = threading.Event()
-            background_thread = threading.Thread(target=background_loading, args=(dataset.chunk_idx, dataset.num_chunks, dataset.subjects[chunk_idx], data_queue))
+            background_thread = threading.Thread(target=background_loading, args=(dataset.chunk_idx, dataset.num_chunks, dataset.subjects[chunk_idx], data_queue, shape))
             background_thread.daemon = True
             background_thread.start()
             dataloader   = DataLoader(dataset, batch_size=128, shuffle=False, drop_last=False)

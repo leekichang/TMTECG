@@ -17,8 +17,8 @@ def x_flip(
     x:torch.FloatTensor
 )->torch.FloatTensor:
     """
-    x: (N,C,S)
-    return: (N,C,S)
+    x: (N,C,S) or (N, K, C, S)
+    return: (N,C,S) or (N, K, C, S)
     
     Vertical (x-axis) Flip
     """
@@ -28,8 +28,8 @@ def y_flip(
     x:torch.FloatTensor
 )->torch.FloatTensor:
     """
-    x: (N,C,S)
-    return: (N,C,S)
+    x: (N,C,S) or (N, K, C, S)
+    return: (N,C,S) or (N, K, C, S)
     
     Horizontal (y-axis) Flip
     """
@@ -41,8 +41,8 @@ def gaussian_noise(
     std:float=0.1
 )->torch.FloatTensor:
     """
-    x: (N,C,S)
-    return: (N,C,S)
+    x: (N,C,S) or (N, K, C, S)
+    return: (N,C,S) or (N, K, C, S)
     
     Add Guassian Noise
     """
@@ -55,8 +55,8 @@ def spec_time(
     mask_size,
 )->torch.FloatTensor:
     """
-    x: (N,C,S)
-    return: (N,C,S)
+    x: (N,C,S) or (N, K, C, S)
+    return: (N,C,S) or (N, K, C, S)
     
     Apply Spectral time masking
     """
@@ -80,8 +80,8 @@ def spec_freq(
     mask_size,
 )->torch.FloatTensor:
     """
-    x: (N,C,S)
-    return: (N,C,S)
+    x: (N,C,S) or (N, K, C, S)
+    return: (N,C,S) or (N, K, C, S)
     
     Apply Spectral frequency masking
     """
@@ -132,14 +132,14 @@ class Augmentator(nn.Module):
                 lambda x: gaussian_noise(x, mean=0, std=0.1),
                 p=self.p
             ),
-            RandomApply(
-                lambda x: spec_time(x, max_masked_bins=random.randint(1, 2), mask_size=random.uniform(2, 5)),
-                p=self.p
-            ),
-            RandomApply(
-                lambda x: spec_freq(x, max_masked_bins=random.randint(1, 2), mask_size=random.uniform(2, 5)),
-                p=self.p
-            ),
+            # RandomApply(
+            #     lambda x: spec_time(x, max_masked_bins=random.randint(1, 2), mask_size=random.uniform(2, 5)),
+            #     p=self.p
+            # ),
+            # RandomApply(
+            #     lambda x: spec_freq(x, max_masked_bins=random.randint(1, 2), mask_size=random.uniform(2, 5)),
+            #     p=self.p
+            # ),
         )
 
     def forward(self, x, aug_list):

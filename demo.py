@@ -75,5 +75,5 @@ if __name__ == '__main__':
         plt.ylabel('True Positive Rate')
         plt.title('ROC')
         plt.legend(loc="lower right")
-        plt.savefig('./ROC.png')
+        # plt.savefig('./ROC.png')
         plt.show()
