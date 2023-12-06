@@ -74,7 +74,7 @@ class ResNet(nn.Module):
         self.projector   = MLP(dim=128, hidden_size=256*self.config['n_stage'])
         
         if num_class != 0:
-            self.classifier  = nn.Linear(in_features=128, out_features=num_class)
+            self.classifier  = nn.Linear(in_features=128*self.config['n_stage'], out_features=num_class)
         else:
             self.classifier  = nn.Identity()
 
@@ -83,30 +83,32 @@ class ResNet(nn.Module):
         if len(x.shape) == 4:
             x = x.reshape((x.size(0)*self.config['n_stage'], x.size(2), x.size(3)))
         x = F.relu(self.conv1(x))
-        print(f'1: {x.shape}')
+        # print(f'1: {x.shape}')
         x = self.pool1(self.res1(x))
-        print(f'2: {x.shape}')
+        # print(f'2: {x.shape}')
         x = F.relu(self.conv2(x))
-        print(f'3: {x.shape}')
+        # print(f'3: {x.shape}')
         x = self.pool2(self.res2(x))
-        print(f'4: {x.shape}')
+        # print(f'4: {x.shape}')
         x = F.relu(self.conv3(x))
-        print(f'5: {x.shape}')
+        # print(f'5: {x.shape}')
         x = self.pool3(self.res3(x))
-        print(f'6: {x.shape}')
+        # print(f'6: {x.shape}')
         x = F.relu(self.conv4(x))
-        print(f'7: {x.shape}')
+        # print(f'7: {x.shape}')
         x = self.pool(self.res4(x))
-        print(f'8: {x.shape}')
-        x = x.reshape(x.size(0), -1)
-        print(f'9: {x.shape}')
+        # print(f'8: {x.shape}')
+        x = x.reshape(B, self.config['n_stage'], -1)
+        # print(f'7.5: {x.shape}')
+        x = x.reshape(B, -1)
+        # print(f'9: {x.shape}')
         x = self.classifier(x)
-        print(f'10: {x.shape}')
+        # print(f'10: {x.shape}')
         return x
 
 def main():
-    input = torch.zeros((1, 12, 2500)).cuda()
-    model = ResNet(num_class = 2).cuda()
+    input = torch.zeros((2, 12, 2500)).cuda()
+    model = ResNet(model_type='single-B', num_class = 2).cuda()
     model.projector = None
     total_params = sum(p.numel() for p in model.parameters())
     print(model)
