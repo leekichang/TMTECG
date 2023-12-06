@@ -54,7 +54,7 @@ class OURSLoss(nn.Module):
         positive_pairs = similarity_matrix[positive_mask].view(batch_size, -1)
         negative_pairs = similarity_matrix[negative_mask].view(batch_size, -1)
         
-        # Calculate logits and labels
+        # Calculate logits and labels -> self-contrastive loss
         logits = torch.cat([positive_pairs, negative_pairs], dim=1)
         labels = torch.zeros(batch_size, device=z_i.device, dtype=torch.long)
         
@@ -62,6 +62,7 @@ class OURSLoss(nn.Module):
         loss1 = nn.functional.cross_entropy(logits, labels)
         zero_fill = similarity_matrix
         zero_fill[final_mask==False] = 0
+        # loss w.r.t. the temporal invariance
         loss2 = -1*torch.mean(torch.log(torch.sum(torch.exp(zero_fill), dim=1)/torch.sum(torch.exp(similarity_matrix), dim=1)))
         
         loss  = loss1+loss2
@@ -112,7 +113,7 @@ class OURS:
                 args=(self.dataset.chunk_idx, self.dataset.num_chunks, self.dataset.subjects[chunk_idx], data_queue, self.data_shape))
             background_thread.daemon = True
             background_thread.start()
-            self.dataloader = DataLoader(self.dataset, batch_size=self.args.batch_size, shuffle=True, drop_last=False)
+            self.dataloader = DataLoader(self.dataset, batch_size=self.args.batch_size, shuffle=True, drop_last=True)
             for (X, id_, length) in self.dataloader:
                 self.optimizer.zero_grad()
                 X      = X.to(self.device)
@@ -137,7 +138,7 @@ class OURS:
         self.train_loss.append(np.mean(losses))
         if self.args.use_tb:
             self.TB_WRITER.add_scalar("Train Loss", np.mean(losses), self.epoch+1)
-    
+
     @torch.no_grad()
     def test(self):
         return
