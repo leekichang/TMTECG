@@ -23,7 +23,7 @@ with open('./dataset/full/subject_ids.pickle', 'rb') as f:
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', help='experiement name', type=str, default='CNN_B_CMSC')
-    parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg', 'CNN_single-B', 'vit_B', 'vit_B-single'])
+    parser.add_argument('--model', help='Model'  , type=str, default='CNN_B'  , choices=['CNN_B', 'CNN_Bg', 'CNN_single-B', 'vit_B', 'vit_B-single', 'ResNet_B', 'ResNet_single-B'])
     parser.add_argument('--dataset', help='Dataset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
     parser.add_argument('--trainset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
     parser.add_argument('--testset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])

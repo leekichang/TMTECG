@@ -19,7 +19,7 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
     trainer = utils.build_trainer(args)
     checkpoint = torch.load(f'./checkpoints/SimCLR_{args.test_batch}_pretrain/{args.ckpt_epoch}.pth')
-    load_backbone(checkpoint, trainer.model)
+    # load_backbone(checkpoint, trainer.model)
     # for param_name, param in trainer.model.named_parameters():
     #     if 'classifier' not in param_name:
     #         param.requires_grad = False
