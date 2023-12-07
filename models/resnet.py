@@ -56,22 +56,22 @@ class ResNet(nn.Module):
         input_channel, input_size = 12, 2500
         
         self.conv1 = nn.Conv1d(input_channel, 64, kernel_size = 1, stride = 1)
-        self.res1 = resConv1dBlock(64, 64, kernel_size = 3, stride = 1, layer_num = 3)
+        self.res1 = resConv1dBlock(64, 64, kernel_size = 3, stride = 1, layer_num = 1)
         self.pool1 = nn.AvgPool1d(kernel_size = 2)
 
         self.conv2 = nn.Conv1d(64, 128, kernel_size = 1, stride = 1)
-        self.res2 = resConv1dBlock(128, 128, kernel_size = 3, stride = 1, layer_num = 4)
+        self.res2 = resConv1dBlock(128, 128, kernel_size = 3, stride = 1, layer_num = 1)
         self.pool2 = nn.AvgPool1d(kernel_size = 2)
 
         self.conv3 = nn.Conv1d(128, 256, kernel_size = 1, stride = 1)
-        self.res3 = resConv1dBlock(256, 256,  kernel_size = 3, stride = 1, layer_num = 7)
+        self.res3 = resConv1dBlock(256, 256,  kernel_size = 3, stride = 1, layer_num = 1)
         self.pool3 = nn.AvgPool1d(kernel_size = 2)
 
         self.conv4 = nn.Conv1d(256, 128, kernel_size = 1, stride = 1)
-        self.res4 = resConv1dBlock(128, 128, kernel_size = 3, stride = 1, layer_num = 4)
+        self.res4 = resConv1dBlock(128, 128, kernel_size = 3, stride = 1, layer_num = 1)
         self.pool = nn.AvgPool1d(kernel_size = int(input_size / 8))
         
-        self.projector   = MLP(dim=128, hidden_size=256*self.config['n_stage'])
+        self.projector   = MLP(dim=256, hidden_size=256*self.config['n_stage'])
         
         if num_class != 0:
             self.classifier  = nn.Linear(in_features=128*self.config['n_stage'], out_features=num_class)
@@ -82,6 +82,7 @@ class ResNet(nn.Module):
         B = x.size(0)
         if len(x.shape) == 4:
             x = x.reshape((x.size(0)*self.config['n_stage'], x.size(2), x.size(3)))
+        # print(f'0:{x.shape}')
         x = F.relu(self.conv1(x))
         # print(f'1: {x.shape}')
         x = self.pool1(self.res1(x))
@@ -99,7 +100,7 @@ class ResNet(nn.Module):
         x = self.pool(self.res4(x))
         # print(f'8: {x.shape}')
         x = x.reshape(B, self.config['n_stage'], -1)
-        # print(f'7.5: {x.shape}')
+        # print(f'8.5: {x.shape}')
         x = x.reshape(B, -1)
         # print(f'9: {x.shape}')
         x = self.classifier(x)
