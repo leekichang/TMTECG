@@ -71,7 +71,7 @@ class ResNet(nn.Module):
         self.res4 = resConv1dBlock(128, 128, kernel_size = 3, stride = 1, layer_num = 1)
         self.pool = nn.AvgPool1d(kernel_size = int(input_size / 8))
         
-        self.projector   = MLP(dim=256, hidden_size=256*self.config['n_stage'])
+        self.projector   = MLP(dim=128, hidden_size=256*self.config['n_stage'])
         
         if num_class != 0:
             self.classifier  = nn.Linear(in_features=128*self.config['n_stage'], out_features=num_class)
