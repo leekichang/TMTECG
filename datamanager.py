@@ -131,7 +131,12 @@ class TMT_Full(Dataset):
 def load_data(file, shape=(-1,12,5000)):
     file_data = np.load(file)
     data = file_data['data']
-    id_  = SUBJECT_IDS[str(file_data['id'])]
+    # print(file_data['id'])
+    if str(file_data['id']) in list(SUBJECT_IDS.keys()):
+        id_  = SUBJECT_IDS[str(file_data['id'])]
+    else:
+        print(f"NO USER ID: {file_data['id']}")
+        return 
     result = {'data':None, 'id':None, 'length':None}
     if shape[2] == 2500:
         result['data']   = data
@@ -145,14 +150,14 @@ def load_data(file, shape=(-1,12,5000)):
             result['length'] = np.arange(data.shape[0])
             result['id']     = np.ones(data.shape[0])*id_
             if result['data'] is None:
-                print("FUCK")
+                print("NO DATA")
             return result
         else:
             result['data']   = data[:B-1].reshape(shape)
             result['length'] = np.arange(result['data'].shape[0])
             result['id']     = np.ones(result['data'].shape[0])*id_
             if result['data'] is None:
-                print("FUCK")
+                print("NO DATA")
             return result
 
 def load_data_parallel(files, shape):

@@ -134,6 +134,14 @@ class SupervisedTrainer:
         self.model = utils.build_model(self.args)
         if self.args.phase == 'randominit':
             print("TRAINING FROM SCRATCH!")
+        elif self.args.phase == 'randominitlinear':
+            print("TRAINING ONLY CLASIFIER FROM SCRATCH!")
+            classifier = self.model.classifier
+            self.model.classifier = None
+            self.model.projector = None
+            for param in self.model.parameters():
+                param.requires_grad = False
+            self.model.classifier = classifier
         elif self.args.phase == 'finetune':
             print("DOWNSTREAM TASK WITH TRIANING BACKBONE!")
             classifier = self.model.classifier

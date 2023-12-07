@@ -89,6 +89,9 @@ class CNN(nn.Module):
 
 if __name__ == '__main__':
     model = CNN('B')
+    model.projector = None
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f'Total parameter:{total_params:,}')    
     x = torch.randn(2, 6, 12, 2500)
     print(0, x.shape)
     out = model(x)
