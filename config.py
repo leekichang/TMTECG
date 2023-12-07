@@ -16,6 +16,7 @@ TRAINER = {
     'finetune':'SupervisedTrainer',
     'linear':'SupervisedTrainer',
     'randominit':'SupervisedTrainer',
+    'randominitlinear':'SupervisedTrainer',
     'BYOL':'BYOL',
     'SimCLR':'SimCLR',
     'CMSC':'CMSC',

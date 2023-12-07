@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument('--dataset', help='Dataset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
     parser.add_argument('--trainset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
     parser.add_argument('--testset', type=str, default='cad', choices=['angio', 'cad', 'whole', 'full'])
-    parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'SimCLR', 'BYOL', 'CMSC', 'OURS'])
+    parser.add_argument('--phase', help='Phase', type=str, default='randominit', choices=['finetune', 'linear', 'randominit', 'randominitlinear', 'SimCLR', 'BYOL', 'CMSC', 'OURS'])
     parser.add_argument('--loss', help='Loss function', type=str, default='CrossEntropyLoss')
     parser.add_argument('--optimizer', help='Optimizer', type=str, default='AdamW')
     parser.add_argument('--lr', help='Learning rate', type=float, default=0.001)
@@ -62,7 +62,7 @@ def str2bool(v):
 
 def load_dataset(args, is_train=True):
     data_type    = args.trainset if is_train else args.testset    
-    dataset_type = 'TMT' if args.phase in ['finetune', 'linear', 'randominit'] else 'TMT_Full'
+    dataset_type = 'TMT' if args.phase in ['finetune', 'linear', 'randominit', 'randominitlinear'] else 'TMT_Full'
     return getattr(datamanager, dataset_type)(args, is_train, path=args.datapath, data_types=cfg.DATA_TYPES[data_type])
 
 def build_model(args):
