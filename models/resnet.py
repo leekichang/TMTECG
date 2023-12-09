@@ -9,10 +9,16 @@ __all__ = [
 
 model_config={  
                 'B':{
-                'n_stage':6,},
+                'n_stage':6,
+                'n_meta':0},
+
+                'Bm':{
+                'n_stage':6,
+                'n_meta':7},
                 
                 'single-B':{
-                'n_stage':1,},
+                'n_stage':1,
+                'n_meta':0},
           }
 
 class resConv1dBlock(nn.Module):
@@ -74,11 +80,11 @@ class ResNet(nn.Module):
         self.projector   = MLP(dim=128, hidden_size=256*self.config['n_stage'])
         
         if num_class != 0:
-            self.classifier  = nn.Linear(in_features=128*self.config['n_stage'], out_features=num_class)
+            self.classifier  = nn.Linear(in_features=128*self.config['n_stage']+self.config['n_meta'], out_features=num_class)
         else:
             self.classifier  = nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x, meta=None):
         B = x.size(0)
         if len(x.shape) == 4:
             x = x.reshape((x.size(0)*self.config['n_stage'], x.size(2), x.size(3)))
@@ -103,6 +109,8 @@ class ResNet(nn.Module):
         # print(f'8.5: {x.shape}')
         x = x.reshape(B, -1)
         # print(f'9: {x.shape}')
+        if self.config['n_meta'] != 0#:
+            x = torch.cat([x, meta], dim=1)
         x = self.classifier(x)
         # print(f'10: {x.shape}')
         return x

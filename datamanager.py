@@ -17,6 +17,8 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset
 from concurrent.futures import ThreadPoolExecutor
 
+LEADS = np.array([0,1,6,7,8,9,10,11])
+
 def minmax_scaling(data, new_min=0, new_max=1):
     data_min = np.min(data, axis=1, keepdims=True)
     data_max = np.max(data, axis=1, keepdims=True)
@@ -29,22 +31,25 @@ with open('./dataset/full/subject_ids.pickle', 'rb') as f:
 class TMT(Dataset):
     def __init__(self, args, is_train, path='./dataset', data_types=cfg.DATA_TYPES['cad']):
         self.args = args
-        self.patient, self.data, self.labels  = [], [], []
+        self.patient, self.data, self.labels, self.metas  = [], [], [], []
         for t in data_types:
             path_ = f'{path}/{t}/train' if is_train else f'{path}/{t}/test'
             files = [file for file in os.listdir(path_) if file.endswith('.npz')]
             data_and_labels = self.load_data_parallel(files, path_)
-            for data, label in data_and_labels:
+            for (data, label) in data_and_labels:
                 self.data.append(data)
                 self.labels.append(label)
+                # self.metas.append(meta)
         self.data       = F.normalize(torch.FloatTensor(np.array(self.data)), dim=-1)
         self.labels     = torch.LongTensor(np.array(self.labels))
+        # self.metas     = torch.FloatTensor(np.array(self.metas).astype(np.float32))
+        # print(f'{"Train" if is_train else "Test"} data: {self.data.shape} target: {self.labels.shape} meta: {self.metas.shape}')
         print(f'{"Train" if is_train else "Test"} data: {self.data.shape} target: {self.labels.shape}')
         
     def load_data(self, file, path):
         file_path = f'{path}/{file}'
-        file_data = np.load(file_path)
-        return file_data['data'], file_data['label']
+        file_data = np.load(file_path, allow_pickle=True)
+        return file_data['data'][LEADS], file_data['label'] #, file_data['meta']
 
     def load_data_parallel(self, files, path):
         with ThreadPoolExecutor(max_workers=12) as executor:
@@ -57,7 +62,8 @@ class TMT(Dataset):
     def __getitem__(self, idx):
         data_item  = self.data[idx]
         label_item = self.labels[idx]
-        return data_item, label_item
+        # meta_item = self.metas[idx]
+        return data_item, label_item #, meta_item
 
 
 class TMT_Full(Dataset):
@@ -128,9 +134,9 @@ class TMT_Full(Dataset):
         length = self.data['length'][idx]
         return data, id_, length
 
-def load_data(file, shape=(-1,12,5000)):
+def load_data(file, shape=(-1,8,5000)):
     file_data = np.load(file)
-    data = file_data['data']
+    data = file_data['data'][LEADS]
     # print(file_data['id'])
     if str(file_data['id']) in list(SUBJECT_IDS.keys()):
         id_  = SUBJECT_IDS[str(file_data['id'])]

@@ -59,7 +59,7 @@ class SupervisedTrainer:
     def train(self):
         self.model.train()
         losses = []
-        for X, Y in self.train_loader:
+        for (X, Y) in self.train_loader:
             self.optimizer.zero_grad()
             X, Y = X.to(self.device), Y.to(self.device)
             pred = self.model(X)
@@ -77,7 +77,7 @@ class SupervisedTrainer:
     def test(self):
         self.model.eval()
         probs, targets, losses = [], [], []
-        for X, Y in self.test_loader:
+        for (X, Y) in self.test_loader:
             X, Y = X.to(self.device), Y.to(self.device)
             pred = self.model(X)
             loss = self.criterion(pred, Y)
